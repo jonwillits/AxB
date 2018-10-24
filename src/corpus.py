@@ -1,19 +1,7 @@
 import random
 from src import config
 
-class CorpusBase(object):
-    def __init__(self):
-
-        self.num_tokens = 0
-
-        self.X = []
-        self.Y = []
-
-        self.vocab_list = []
-        self.vocab_index_dict = {}
-        self.vocab_freq_dict = {}
-
-class AxbCorpus(CorpusBase):
+class AxbCorpus():
 
     def __init__(self,
                  num_sequences = config.AxB.num_sequences,
@@ -31,6 +19,8 @@ class AxbCorpus(CorpusBase):
 
         self.sequence_population = []
         self.sequence_sample = []
+        self.sequence_index_sample = []
+        self.sequence_vector_sample = []
         self.X = []
         self.Y = []
 
@@ -153,16 +143,10 @@ class AxbCorpus(CorpusBase):
         while current_distance < min_distance:
             self.sequence_population = self.add_x(self.sequence_population, replace)
             current_distance += 1
-            print("not here")
         replace = False
-        print(current_distance)
-        self.output_sequences()
         while current_distance < max_distance:
             self.sequence_population = self.add_x(self.sequence_population, replace)
             current_distance += 1
-            print(current_distance)
-            self.output_sequences()
-
 
     def sample_sequences(self):
 
@@ -171,6 +155,9 @@ class AxbCorpus(CorpusBase):
                 self.sequence_sample.append(random.choice(self.sequence_population))
         else:
             self.sequence_sample = self.sequence_population
+
+    def create_index_sequences(self):
+
 
     def count_freqs(self):
 
