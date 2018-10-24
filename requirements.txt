@@ -1,0 +1,6 @@
+numpy
+torch
+tensorflow
+scikit-learn
+matplotlib
+pyprind
