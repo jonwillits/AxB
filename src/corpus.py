@@ -4,14 +4,15 @@ from src import config
 class AxbCorpus():
 
     def __init__(self,
-                 num_sequences = config.AxB.num_sequences,
-                 sample = config.AxB.sample,
                  ab_types = config.AxB.ab_types,
                  x_types = config.AxB.x_types,
                  max_distance = config.AxB.max_distance,
                  min_distance = config.AxB.min_distance,
-                 noise = config.AxB.noise,
                  punct = config.AxB.punct,
+
+                 sample=config.AxB.sample,
+                 num_sequences=config.AxB.num_sequences,
+                 noise=config.AxB.noise,
                  seed = config.General.seed,
                  ):
 
@@ -33,6 +34,7 @@ class AxbCorpus():
         self.noise = noise
         self.punct = punct
         self.seed = seed
+        self.sample_size = 0
 
         self.axb_pair_list = []
         self.a_list = []
@@ -42,18 +44,13 @@ class AxbCorpus():
         self.stimulus_category_dict = {}
         self.category_item_lists_dict = {'A': [], 'B': [], 'x': [], '.': ['.']}
 
-        self.xsize = self.ab_types*2 + self.x_types + 1
-        self.ysize = self.xsize
-
         self.vocab_list.append('.')
         self.vocab_index_dict['.'] = 0
         self.vocab_freq_dict['.'] = 0
 
         self.generate_vocab()
         self.generate_sequence_population()
-        self.sample_sequences()
-        self.index_sequences()
-        self.count_freqs()
+        self.generate_sequence_sample()
 
         self.vocab_size = len(self.vocab_list)
 
@@ -147,32 +144,15 @@ class AxbCorpus():
             self.sequence_population = self.add_x(self.sequence_population, replace)
             current_distance += 1
 
-    def index_sequences(self):
-        self.index_sequence_list = []
-
-        for sequence in self.sequence_sample:
-            new_list = []
-            for item in sequence:
-                new_list.append(self.vocab_index_dict[item])
-            self.index_sequence_list.append(new_list)
-
-    def sample_sequences(self):
+    def generate_sequence_sample(self):
 
         if self.sample:
             for i in range(self.num_sequences):
                 self.sequence_sample.append(random.choice(self.sequence_population))
+            self.sample_size = len(self.sequence_sample)
         else:
             self.sequence_sample = self.sequence_population
-
-    def count_freqs(self):
-
-        for sequence in self.sequence_sample:
-            for token in sequence:
-                self.vocab_freq_dict[token] += 1
-
-    def output_freqs(self):
-        for item in self.vocab_freq_dict:
-            print(item, self.vocab_freq_dict[item])
+            self.sample_size = self.num_sequences
 
 
 
