@@ -9,60 +9,53 @@ from src import config
 
 
 class RNN:
-    def __init__(self, corpus,
-                 rnn_type = config.RNN.rnn_type,
-                 hidden_size = config.RNN.hidden_size,
-                 epochs = config.RNN.epochs,
-                 learning_rate = config.RNN.learning_rate,
-                 weight_init = config.RNN.weight_init,
-                 seed = config.General.seed,
-                 num_eval_steps = config.RNN.num_eval_steps,
-                 bptt = config.RNN.bptt,
-                 num_seqs_in_batch = config.RNN.num_seqs_in_batch,
-                 num_layers = config.RNN.num_layers,
-                 dropout_prob = config.RNN.dropout_prob,
-                 grad_clip = config.RNN.grad_clip):
-
-        self.corpus = corpus
+    def __init__(self,
+                 input_size,
+                 rnn_type=config.RNN.rnn_type,
+                 hidden_size=config.RNN.hidden_size,
+                 epochs=config.RNN.epochs,
+                 learning_rate=config.RNN.learning_rate,
+                 init_range=config.RNN.init_range,
+                 seed=config.General.seed,
+                 num_eval_steps=config.RNN.num_eval_steps,
+                 bptt=config.RNN.bptt,
+                 num_seqs_in_batch=config.RNN.num_seqs_in_batch,
+                 num_layers=config.RNN.num_layers,
+                 dropout_prob=config.RNN.dropout_prob,
+                 grad_clip=config.RNN.grad_clip):
+        # input
+        self.input_size = input_size
         self.pad_id = 0  # TODO this is the id for the pad symbol - make sure this is correct
-        self.input_size = len(corpus.vocab_list)
+        # rnn
         self.rnn_type = rnn_type
         self.hidden_size = hidden_size
         self.epochs = epochs
-        self.weight_init = weight_init
         self.seed = seed
         self.num_eval_steps = num_eval_steps
-
         self.dropout_prob = dropout_prob
         self.num_layers = num_layers
         self.grad_clip = grad_clip
-
-        self.batch_size = batch_size
+        self.bptt = bptt
+        self.num_seqs_in_batch = num_seqs_in_batch
         self.learning_rate = learning_rate
-        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size, self.batch_size,
-                              self.weight_init)
+        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size, init_range)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate[0])
-        self.model.cuda()
 
-    def train(self, verbose=False):
+    def train(self, seqs, verbose=False):
         print('Training...')
-        # train loop
         lr = self.learning_rate[0]  # initial
         decay = self.learning_rate[1]
         num_epochs_without_decay = self.learning_rate[2]
-        pbar = pyprind.ProgBar(self.epochs, stream=sys.stdout)
         for epoch in range(self.epochs):
             if verbose:
                 print('Starting epoch {} with lr={}'.format(epoch, lr))
             lr_decay = decay ** max(epoch - num_epochs_without_decay, 0)
             lr = lr * lr_decay  # decay lr if it is time
-            self.train_epoch(self.corpus.index_sequence_list, lr, verbose)
-            if verbose:
-                print('\nTraining perplexity at epoch {}: {:8.2f}'.format(
-                    epoch, self.calc_pp(self.corpus.index_sequence_list, verbose)))  # TODO do for categories separately
-            else:
-                pbar.update()
+            self.train_epoch(seqs, lr, verbose)
+            print('Training perplexity at epoch {}: {:8.2f}'.format(epoch, self.calc_pp(seqs)))
+            print('\n')
+        self.save_softmax_probs_to_disk()
 
     def retrieve_wx_for_analysis(self):
         wx_weights = self.model.wx.weight.detach().cpu().numpy()
@@ -88,20 +81,18 @@ class RNN:
     def train_epoch(self, seqs, lr, verbose):
         start_time = time.time()
         self.model.train()
-        # shuffle
         np.random.shuffle(seqs)
         # a batch contains num_docs_in_batch sequences (each sequence consists of multiple windows)
         for batch_id, batch in enumerate(self.gen_batches(seqs, self.num_seqs_in_batch)):
             self.model.batch_size = len(batch)  # dynamic batch size
             x = batch[:, :-1]
             y = batch[:, -1]
-
-            print(x)
-            print(y)
-
+            if verbose:
+                print(x)
+                print(y)
             # forward step
-            inputs = torch.cuda.LongTensor(x.T)  # requires [num_steps, mb_size]
-            targets = torch.cuda.LongTensor(y)
+            inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
+            targets = torch.LongTensor(y)
             hidden = self.model.init_hidden()  # this must be here to re-init graph
             logits = self.model(inputs, hidden)
             # backward step
@@ -122,41 +113,22 @@ class RNN:
                 print("batch {:,} perplexity: {:8.2f} | seconds elapsed in epoch: {:,.0f} ".format(
                     batch_id, pp, secs))
 
-    def calc_pp(self, seqs, verbose):
-        if verbose:
-            print('Calculating perplexity...')
-        self.model.eval()
-        errors = 0
-        batch_id = 0
-        token_ids = np.hstack(seqs)
-        num_windows = len(token_ids)
-        pbar = pyprind.ProgBar(num_windows, stream=sys.stdout)
-        for batch_id, batch in enumerate(self.gen_batches(seqs, num_seqs_in_batch=len(seqs))):
-            self.model.batch_size = len(batch)  # dynamic batch size
-
-            # TODO debug
-            print(len(batch))
-
-            x = batch[:, :-1]
-            y = batch[:, -1]
-            print('x')
-            print(x)
-            print('y')
-            print(y)
-
-            # TODO output softmax probabilities
-
-
-            pbar.update()
-            inputs = torch.cuda.LongTensor(x.T)  # requires [num_steps, mb_size]
-            targets = torch.cuda.LongTensor(y)
-            hidden = self.model.init_hidden()  # this must be here to re-init graph
-            logits = self.model(inputs, hidden)
-            #
-            self.optimizer.zero_grad()  # sets all gradients to zero
-            loss = self.criterion(logits.unsqueeze_(0), targets)  # need to add dimension due to mb_size = 1
-            errors += loss.item()
-        res = np.exp(errors / batch_id + 1)
+    def calc_pp(self, seqs):
+        print('Calculating perplexity...')
+        self.model.eval()  # protects from dropout
+        batch = np.vstack([self.to_windows(seq) for seq in seqs])  # batch contains all seqs
+        self.model.batch_size = len(batch)
+        x = batch[:, :-1]
+        y = batch[:, -1]
+        inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
+        targets = torch.LongTensor(y)
+        hidden = self.model.init_hidden()  # this must be here to re-init graph
+        logits = self.model(inputs, hidden)
+        #
+        self.optimizer.zero_grad()  # sets all gradients to zero
+        loss = self.criterion(logits, targets)
+        errors = loss.item()
+        res = np.exp(errors / len(seqs))
         return res
 
 
@@ -190,6 +162,8 @@ class TorchRNN(torch.nn.Module):
         self.wy.weight.data.uniform_(-self.init_range, self.init_range)
 
     def init_hidden(self):
+        print('Initializing hidden weights with size [{}, {}, {}]'.format(
+            self.num_layers, self.batch_size, self.hidden_size))
         weight = next(self.parameters()).data
         if self.rnn_type == 'lstm':
             res = (torch.autograd.Variable(weight.new(self.num_layers,

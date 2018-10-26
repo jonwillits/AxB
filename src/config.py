@@ -18,6 +18,7 @@ class AxB:
     num_sequences = 10
     noise = 0.1
 
+
 class RNN:
     rnn_type = 'srn'
     num_eval_steps = 10
@@ -25,8 +26,8 @@ class RNN:
     dropout_prob = 0.0
     grad_clip = None
     bptt = 2
-    num_seqs_in_batch = 2
+    num_seqs_in_batch = 1
     hidden_size = 10
-    epochs = 1
-    learning_rate = [0.01, 0.01, 10]
-    weight_init = 0.3
+    epochs = 100
+    learning_rate = [0.1, 0.01, 10]
+    init_range = 0.1
