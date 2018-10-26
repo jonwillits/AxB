@@ -146,25 +146,22 @@ class RNN:
             self.train_epoch(self.corpus.index_sequence_list, lr, verbose)
             if verbose:
                 print('\nTraining perplexity at epoch {}: {:8.2f}'.format(
-                    epoch, self.calc_pp(self.corpus.index_sequence_list, verbose)))
+                    epoch, self.calc_pp(self.corpus.index_sequence_list, verbose)))  # TODO do for categories separately
             else:
                 pbar.update()
         wx_weights = self.model.wx.weight.detach().cpu().numpy()
 
-    def calc_pp(self, numeric_docs, verbose):
-
-        return 0  # TODO implement
-
+    def calc_pp(self, seqs, verbose):
         if verbose:
             print('Calculating perplexity...')
         self.model.eval()
         self.model.batch_size = 1  # TODO probably better to do on CPU - or find batch size that excludes least samples
         errors = 0
         batch_id = 0
-        token_ids = np.hstack(numeric_docs)
+        token_ids = np.hstack(seqs)
         num_windows = len(token_ids)
         pbar = pyprind.ProgBar(num_windows, stream=sys.stdout)
-        for batch_id, x_b, y_b in self.gen_batches(token_ids, self.model.batch_size, verbose):
+        for batch_id, (x_b, y_b) in enumerate(self.gen_batches(seqs, self.batch_size, verbose)):
             pbar.update()
             inputs = torch.cuda.LongTensor(x_b.T)  # requires [num_steps, mb_size]
             targets = torch.cuda.LongTensor(y_b)
