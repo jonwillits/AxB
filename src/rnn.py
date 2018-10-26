@@ -8,7 +8,7 @@ from src import config
 
 
 class RNN:
-    def __init__(self, corpus,
+    def __init__(self, corpus_list,
                  rnn_type = config.RNN.rnn_type,
                  hidden_size = config.RNN.hidden_size,
                  epochs = config.RNN.epochs,
@@ -22,9 +22,11 @@ class RNN:
                  dropout_prob = config.RNN.dropout_prob,
                  grad_clip = config.RNN.grad_clip):
 
-        self.corpus = corpus
+        self.corpus_list = corpus_list
+        self.generate_master_vocab()
+
         self.pad_id = 0  # TODO this is the id for the pad symbol - make sure this is correct
-        self.input_size = len(corpus.vocab_list)
+        self.input_size = self.master_vocab_size
         self.rnn_type = rnn_type
         self.hidden_size = hidden_size
         self.epochs = epochs
@@ -45,6 +47,19 @@ class RNN:
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate[0])
         self.model.cuda()
+
+    def generate_master_vocab(self):
+        self.master_vocab_list = []
+        self.master_vocab_index_dict = {}
+
+        index_counter = 0
+        for corpus in self.corpus_list:
+            for token in corpus.vocab_list:
+                if token not in self.master_vocab_index_dict:
+                    self.master_vocab_index_dict[token] = index_counter
+                    self.master_vocab_list.append(token)
+                    index_counter += 1
+        self.master_vocab_size = len(self.master_vocab_list)
 
     def gen_windows(self, seq):
         # yield num_steps matrices where each matrix contains windows of size num_steps
