@@ -1,8 +1,8 @@
-import os
-from pathlib import Path
+
 
 class General:
     seed = None
+
 
 class AxB:
     # the basic parameters of the AxB grammar
@@ -18,7 +18,15 @@ class AxB:
     num_sequences = 10
     noise = 0.1
 
+
 class RNN:
+    rnn_type = 'srn'
+    num_eval_steps = 10
+    num_layers = 1
+    dropout_prob = 0.0
+    grad_clip = None
+    batch_size = 2
+    bptt = 2
     hidden_size = 10
     epochs = 1
     learning_rate = [0.01, 0.01, 10]
