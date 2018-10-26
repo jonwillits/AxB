@@ -65,6 +65,26 @@ class RNN:
             yield i, x, y
 
     def gen_batches(self, token_ids, batch_size, verbose):
+        batch_id_list = []
+        x_b_list = []
+        y_b_list = []
+
+        ''' 
+            your old code flattened the inputs, removing the document separation, before the list got to that function
+            that hasnt been done here since i need the minibatches to be based on number of AxB strings (effectively,
+            the number of documents, as each string is in here as a document in the way you're used to), not the number
+            of tokens. so the batching needs to take the list of strings/documents, break them into self.minibatch_size 
+            number of chunks, flatten that and then generate the windows. because of this re-ordering, I didnt think your
+            fancy yield function would work as smoothly, so I converted it to lists. Also, that will be easier for
+            instruction...
+        
+            This function also needs to pad with .'s (vocab_index=0) so we start the window at the first item,
+            not with the first item whose window is BPTT long.
+            This needs to happen each time the window is reset.
+            So if this reset happens every batch, then this padding needs to happen at every batch
+            If the window never resets, then this padding only needs to happen at the very beginning
+        '''
+
         batch_id = 0
         for window_id, x, y in self.gen_windows(
                 token_ids):  # more memory efficient not to create all windows in data
@@ -83,8 +103,12 @@ class RNN:
                     window_id + 1, self.num_steps, num_batches, batch_size))
             for x_b, y_b in zip(np.vsplit(x, num_batches),
                                 np.vsplit(y, num_batches)):
-                yield batch_id, x_b, y_b[:, -1]
+                batch_id_list.append(batch_id)
+                x_b_list.append(x_b)
+                y_b_list.append(y_b)
                 batch_id += 1
+        return batch_id_list, x_b_list, y_b_list
+
 
     def calc_pp(self, numeric_docs, verbose):
         if verbose:
@@ -113,11 +137,21 @@ class RNN:
         start_time = time.time()
         self.model.train()
         self.model.batch_size = self.batch_size
-        # shuffle and flatten
+
+        # shuffle
         if self.shuffle_per_epoch:
             np.random.shuffle(numeric_docs)
-        token_ids = np.hstack(numeric_docs)
-        for batch_id, x_b, y_b in self.gen_batches(token_ids, self.model.batch_size, verbose):
+
+        '''
+        see extensive comments in gen_batches()
+        '''
+        batch_id_list, x_b_list, x_y_list = self.gen_batches(numeric_docs, self.batch_size, verbose)
+
+        for i in range(self.batch_size):
+            batch_id = batch_id_list[i]
+            x_b = x_b_list[i]
+            y_b = y_b_list[i]
+
             # forward step
             inputs = torch.cuda.LongTensor(x_b.T)  # requires [num_steps, mb_size]
             targets = torch.cuda.LongTensor(y_b)
