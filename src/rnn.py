@@ -37,10 +37,10 @@ class RNN:
         self.num_layers = num_layers
         self.grad_clip = grad_clip
 
-        self.bptt = bptt
-        self.num_seqs_in_batch = num_seqs_in_batch
+        self.batch_size = batch_size
         self.learning_rate = learning_rate
-        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size,  self.weight_init)
+        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size, self.batch_size,
+                              self.weight_init)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate[0])
         self.model.cuda()
