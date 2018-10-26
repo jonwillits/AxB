@@ -61,6 +61,23 @@ class RNN:
                     index_counter += 1
         self.master_vocab_size = len(self.master_vocab_list)
 
+    def generate_index_sequences(self, corpus_number):
+
+        try:
+            current_corpus = self.corpus_list[corpus_number]
+        except:
+            print("ERROR: Invalid corpus number specified")
+            sys.exit(2)
+
+        index_sequence_list = []
+        for sequence in current_corpus.sequence_sample:
+            new_sequence = []
+            for token in sequence:
+                new_sequence.append(self.master_vocab_index_dict[token])
+            index_sequence_list.append(new_sequence)
+
+        return index_sequence_list
+
     def gen_windows(self, seq):
         # yield num_steps matrices where each matrix contains windows of size num_steps
         remainder = len(seq) % self.bptt
@@ -146,7 +163,10 @@ class RNN:
                 print("batch {:,} perplexity: {:8.2f} | seconds elapsed in epoch: {:,.0f} ".format(
                     batch_id, pp, secs))
 
-    def train(self, verbose=False):
+    def train(self, corpus_number, verbose=False):
+        index_sequence_list = generate_index_sequences(corpus_number)
+
+
         print('Training...')
         # train loop
         lr = self.learning_rate[0]  # initial

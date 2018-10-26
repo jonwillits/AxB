@@ -18,7 +18,6 @@ class AxB:
     num_sequences = 10
     noise = 0.1
 
-
 class RNN:
     rnn_type = 'srn'
     num_eval_steps = 10
