@@ -1,8 +1,7 @@
 import torch
 import time
-import sys
 import numpy as np
-import pyprind
+import pandas as pd
 from cytoolz import itertoolz
 
 from src import config
@@ -55,10 +54,10 @@ class RNN:
             self.train_epoch(seqs, lr, verbose)
             print('Training perplexity at epoch {}: {:8.2f}'.format(epoch, self.calc_pp(seqs)))
             print('\n')
-        self.save_softmax_probs_to_disk()
+        self.save_logits_to_disk(seqs)
 
     def retrieve_wx_for_analysis(self):
-        wx_weights = self.model.wx.weight.detach().cpu().numpy()
+        wx_weights = self.model.wx.weight.detach().cpu().numpy()  # if stored on gpu
         return wx_weights
 
     def to_windows(self, seq):
@@ -131,6 +130,22 @@ class RNN:
         res = np.exp(errors / len(seqs))
         return res
 
+    def save_logits_to_disk(self, seqs):  # TODO test
+        print('Saving logits to disk...')
+        self.model.eval()  # protects from dropout
+        batch = np.vstack([self.to_windows(seq) for seq in seqs])  # batch contains all seqs
+        self.model.batch_size = len(batch)
+        x = batch[:, :-1]
+        y = batch[:, -1]
+        inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
+        hidden = self.model.init_hidden()  # this must be here to re-init graph
+        logits = self.model(inputs, hidden)
+        #
+        data = logits.detach().numpy()
+        df = pd.DataFrame(index=y, data=data)
+        df.index.name = 'y'
+        print(df)
+        df.to_csv('logits.csv')
 
 class TorchRNN(torch.nn.Module):
     def __init__(self, rnn_type, num_layers, input_size, hidden_size, init_range):
