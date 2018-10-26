@@ -3,6 +3,7 @@ import time
 import sys
 import numpy as np
 import pyprind
+from cytoolz import itertoolz
 
 from src import config
 
@@ -17,7 +18,7 @@ class RNN:
                  seed = config.General.seed,
                  num_eval_steps = config.RNN.num_eval_steps,
                  bptt = config.RNN.bptt,
-                 batch_size = config.RNN.batch_size,
+                 num_seqs_in_batch = config.RNN.num_seqs_in_batch,
                  num_layers = config.RNN.num_layers,
                  dropout_prob = config.RNN.dropout_prob,
                  grad_clip = config.RNN.grad_clip):
@@ -31,86 +32,76 @@ class RNN:
         self.weight_init = weight_init
         self.seed = seed
         self.num_eval_steps = num_eval_steps
-        self.bptt = bptt
-        self.batch_size = batch_size
 
         self.dropout_prob = dropout_prob
         self.num_layers = num_layers
         self.grad_clip = grad_clip
 
-        self.batch_size = batch_size
+        self.bptt = bptt
+        self.num_seqs_in_batch = num_seqs_in_batch
         self.learning_rate = learning_rate
-        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size, self.batch_size,
-                              self.weight_init)
+        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size,  self.weight_init)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate[0])
         self.model.cuda()
 
-    def gen_windows(self, seq):
-        # yield num_steps matrices where each matrix contains windows of size num_steps
-        remainder = len(seq) % self.bptt
-        for i in range(self.bptt):
-            windows = np.roll(seq, -i)  # rightward
-            windows = windows[:-remainder]
+    def train(self, verbose=False):
+        print('Training...')
+        # train loop
+        lr = self.learning_rate[0]  # initial
+        decay = self.learning_rate[1]
+        num_epochs_without_decay = self.learning_rate[2]
+        pbar = pyprind.ProgBar(self.epochs, stream=sys.stdout)
+        for epoch in range(self.epochs):
+            if verbose:
+                print('Starting epoch {} with lr={}'.format(epoch, lr))
+            lr_decay = decay ** max(epoch - num_epochs_without_decay, 0)
+            lr = lr * lr_decay  # decay lr if it is time
+            self.train_epoch(self.corpus.index_sequence_list, lr, verbose)
+            if verbose:
+                print('\nTraining perplexity at epoch {}: {:8.2f}'.format(
+                    epoch, self.calc_pp(self.corpus.index_sequence_list, verbose)))  # TODO do for categories separately
+            else:
+                pbar.update()
 
-            # TODO
-            print('windows')
-            print(windows)
+    def retrieve_wx_for_analysis(self):
+        wx_weights = self.model.wx.weight.detach().cpu().numpy()
+        return wx_weights
 
-            x = np.reshape(windows, (-1, self.bptt))
-            y = np.roll(x, -1)
-            yield i, x, y
+    def to_windows(self, seq):
+        padded = [self.pad_id] * self.bptt + seq
+        bptt_p1 = self.bptt + 1
+        seq_len = len(seq)
+        windows = [padded[i: i + bptt_p1] for i in range(seq_len)]
+        return windows
 
-    def gen_batches(self, seqs, batch_size, verbose):
-        for seq in seqs:
-            # pad
-            seq = [self.pad_id] * (self.bptt - 1) + seq
-
-            # TODO debug
-            print('===========================================')
-            print(seq)
-            print()
-
-            for windows_id, x, y in self.gen_windows(seq):  # more memory efficient
-
-
-                # TODO debug
-                print('x')
-                print(x)
-                print('y')
-                print(y)
-
-                # exclude some rows to split x and y evenly by batch size
-                shape0 = len(x)
-                num_excluded = shape0 % batch_size
-                if num_excluded > 0:  # in case mb_size = 1
-                    x = x[:-num_excluded]
-                    y = y[:-num_excluded]
-                shape0_adj = shape0 - num_excluded
-                # split into batches
-                num_batches = shape0_adj // batch_size
-                if verbose:
-                    print('Excluding {} windows due to fixed batch size'.format(num_excluded))
-                    print('{}/{} Generating {:,} batches with size {}...'.format(
-                        windows_id + 1, self.bptt, num_batches, batch_size))
-                for x_b, y_b in zip(np.vsplit(x, num_batches),
-                                    np.vsplit(y, num_batches)):
-                    yield x_b, y_b[:, -1]
+    def gen_batches(self, seqs, num_seqs_in_batch=None):
+        if num_seqs_in_batch is None:
+            num_seqs_in_batch = self.num_seqs_in_batch
+        windowed_seqs = [self.to_windows(seq) for seq in seqs]
+        if len(windowed_seqs) % num_seqs_in_batch != 0:
+            raise RuntimeError('Set number of sequences in batch to factor of number of sequences.')
+        for windowed_seqs_partition in itertoolz.partition_all(num_seqs_in_batch, windowed_seqs):
+            batch = np.vstack(windowed_seqs_partition)
+            yield batch
 
     def train_epoch(self, seqs, lr, verbose):
         start_time = time.time()
         self.model.train()
-        self.model.batch_size = self.batch_size
         # shuffle
         np.random.shuffle(seqs)
+        # a batch contains num_docs_in_batch sequences (each sequence consists of multiple windows)
+        for batch_id, batch in enumerate(self.gen_batches(seqs, self.num_seqs_in_batch)):
+            self.model.batch_size = len(batch)  # dynamic batch size
+            x = batch[:, :-1]
+            y = batch[:, -1]
 
-        print(seqs)
+            print(x)
+            print(y)
 
-        # create batches within docs only
-        for batch_id, (x_b, y_b) in enumerate(self.gen_batches(seqs, self.batch_size, verbose)):
             # forward step
-            inputs = torch.cuda.LongTensor(x_b.T)  # requires [num_steps, mb_size]
-            targets = torch.cuda.LongTensor(y_b)
+            inputs = torch.cuda.LongTensor(x.T)  # requires [num_steps, mb_size]
+            targets = torch.cuda.LongTensor(y)
             hidden = self.model.init_hidden()  # this must be here to re-init graph
             logits = self.model(inputs, hidden)
             # backward step
@@ -131,40 +122,34 @@ class RNN:
                 print("batch {:,} perplexity: {:8.2f} | seconds elapsed in epoch: {:,.0f} ".format(
                     batch_id, pp, secs))
 
-    def train(self, verbose=False):
-        print('Training...')
-        # train loop
-        lr = self.learning_rate[0]  # initial
-        decay = self.learning_rate[1]
-        num_epochs_without_decay = self.learning_rate[2]
-        pbar = pyprind.ProgBar(self.epochs, stream=sys.stdout)
-        for epoch in range(self.epochs):
-            if verbose:
-                print('Starting epoch {} with lr={}'.format(epoch, lr))
-            lr_decay = decay ** max(epoch - num_epochs_without_decay, 0)
-            lr = lr * lr_decay  # decay lr if it is time
-            self.train_epoch(self.corpus.index_sequence_list, lr, verbose)
-            if verbose:
-                print('\nTraining perplexity at epoch {}: {:8.2f}'.format(
-                    epoch, self.calc_pp(self.corpus.index_sequence_list, verbose)))  # TODO do for categories separately
-            else:
-                pbar.update()
-        wx_weights = self.model.wx.weight.detach().cpu().numpy()
-
     def calc_pp(self, seqs, verbose):
         if verbose:
             print('Calculating perplexity...')
         self.model.eval()
-        self.model.batch_size = 1  # TODO probably better to do on CPU - or find batch size that excludes least samples
         errors = 0
         batch_id = 0
         token_ids = np.hstack(seqs)
         num_windows = len(token_ids)
         pbar = pyprind.ProgBar(num_windows, stream=sys.stdout)
-        for batch_id, (x_b, y_b) in enumerate(self.gen_batches(seqs, self.batch_size, verbose)):
+        for batch_id, batch in enumerate(self.gen_batches(seqs, num_seqs_in_batch=len(seqs))):
+            self.model.batch_size = len(batch)  # dynamic batch size
+
+            # TODO debug
+            print(len(batch))
+
+            x = batch[:, :-1]
+            y = batch[:, -1]
+            print('x')
+            print(x)
+            print('y')
+            print(y)
+
+            # TODO output softmax probabilities
+
+
             pbar.update()
-            inputs = torch.cuda.LongTensor(x_b.T)  # requires [num_steps, mb_size]
-            targets = torch.cuda.LongTensor(y_b)
+            inputs = torch.cuda.LongTensor(x.T)  # requires [num_steps, mb_size]
+            targets = torch.cuda.LongTensor(y)
             hidden = self.model.init_hidden()  # this must be here to re-init graph
             logits = self.model(inputs, hidden)
             #
@@ -176,12 +161,12 @@ class RNN:
 
 
 class TorchRNN(torch.nn.Module):
-    def __init__(self, rnn_type, num_layers, input_size, hidden_size, batch_size, init_range):
+    def __init__(self, rnn_type, num_layers, input_size, hidden_size, init_range):
         super().__init__()
         self.rnn_type = rnn_type
         self.num_layers = num_layers
         self.hidden_size = hidden_size
-        self.batch_size = batch_size
+        self.batch_size = None  # is set dynamically
         self.init_range = init_range
         #
         self.wx = torch.nn.Embedding(input_size, self.hidden_size)

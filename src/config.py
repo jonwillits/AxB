@@ -25,8 +25,8 @@ class RNN:
     num_layers = 1
     dropout_prob = 0.0
     grad_clip = None
-    batch_size = 2
     bptt = 2
+    num_seqs_in_batch = 2
     hidden_size = 10
     epochs = 1
     learning_rate = [0.01, 0.01, 10]
