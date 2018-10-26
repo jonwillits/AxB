@@ -12,17 +12,13 @@ class AxbCorpus():
                  min_distance = config.AxB.min_distance,
                  noise = config.AxB.noise,
                  punct = config.AxB.punct,
-                 seed = config.AxB.seed,
+                 seed = config.General.seed,
                  ):
 
         self.num_tokens = 0
 
         self.sequence_population = []
         self.sequence_sample = []
-        self.sequence_index_sample = []
-        self.sequence_vector_sample = []
-        self.X = []
-        self.Y = []
 
         self.vocab_list = []
         self.vocab_index_dict = {}
@@ -56,7 +52,10 @@ class AxbCorpus():
         self.generate_vocab()
         self.generate_sequence_population()
         self.sample_sequences()
+        self.index_sequences()
         self.count_freqs()
+
+        self.vocab_size = len(self.vocab_list)
 
     def generate_vocab(self):
 
@@ -148,6 +147,15 @@ class AxbCorpus():
             self.sequence_population = self.add_x(self.sequence_population, replace)
             current_distance += 1
 
+    def index_sequences(self):
+        self.index_sequence_list = []
+
+        for sequence in self.sequence_sample:
+            new_list = []
+            for item in sequence:
+                new_list.append(self.vocab_index_dict[item])
+            self.index_sequence_list.append(new_list)
+
     def sample_sequences(self):
 
         if self.sample:
@@ -156,18 +164,11 @@ class AxbCorpus():
         else:
             self.sequence_sample = self.sequence_population
 
-    def create_index_sequences(self):
-
-
     def count_freqs(self):
 
         for sequence in self.sequence_sample:
             for token in sequence:
                 self.vocab_freq_dict[token] += 1
-
-    def output_sequences(self):
-        for sequence in self.sequence_population:
-            print(sequence)
 
     def output_freqs(self):
         for item in self.vocab_freq_dict:
