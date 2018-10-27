@@ -3,13 +3,12 @@ import time
 import numpy as np
 import pandas as pd
 from cytoolz import itertoolz
-
 from src import config
 
 
 class RNN:
     def __init__(self,
-                 input_size,
+                 master_vocab,
                  rnn_type=config.RNN.rnn_type,
                  hidden_size=config.RNN.hidden_size,
                  epochs=config.RNN.epochs,
@@ -23,8 +22,9 @@ class RNN:
                  dropout_prob=config.RNN.dropout_prob,
                  grad_clip=config.RNN.grad_clip):
         # input
-        self.input_size = input_size
-        self.pad_id = 0  # TODO this is the id for the pad symbol - make sure this is correct
+        self.master_vocab = master_vocab
+        self.input_size = master_vocab.master_vocab_size
+        self.pad_id = 0
         # rnn
         self.rnn_type = rnn_type
         self.hidden_size = hidden_size
@@ -41,20 +41,22 @@ class RNN:
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate[0])
 
-    def train(self, seqs, verbose=False):
-        print('Training...')
+    def train(self, seqs, corpus, verbose=False):
+        print('{:13s} {:10s}{:10s}{:10s}{:10s}{:10s}'.format('Epoch', 'Perp', 'A', 'x', 'B', '.'))
         lr = self.learning_rate[0]  # initial
         decay = self.learning_rate[1]
         num_epochs_without_decay = self.learning_rate[2]
         for epoch in range(self.epochs):
-            if verbose:
-                print('Starting epoch {} with lr={}'.format(epoch, lr))
             lr_decay = decay ** max(epoch - num_epochs_without_decay, 0)
             lr = lr * lr_decay  # decay lr if it is time
             self.train_epoch(seqs, lr, verbose)
-            print('Training perplexity at epoch {}: {:8.2f}'.format(epoch, self.calc_pp(seqs)))
-            print('\n')
-        self.save_logits_to_disk(seqs)
+
+            pp = self.calc_pp(seqs)
+            accs = self.calc_accuracy(seqs, corpus)
+            print('{:8}: {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}'.format(epoch, pp, accs[0], accs[1], accs[2], accs[3]))
+
+        y, logits = self.get_logits(seqs)
+        self.save_logits_to_disk(y, logits)
 
     def retrieve_wx_for_analysis(self):
         wx_weights = self.model.wx.weight.detach().cpu().numpy()  # if stored on gpu
@@ -104,7 +106,7 @@ class RNN:
                     p.data.add_(-lr, p.grad.data)
             else:
                 self.optimizer.step()
-            # console
+            #console
             if batch_id % self.num_eval_steps == 0 and verbose:
                 xent_error = loss.item()
                 pp = np.exp(xent_error)
@@ -112,8 +114,45 @@ class RNN:
                 print("batch {:,} perplexity: {:8.2f} | seconds elapsed in epoch: {:,.0f} ".format(
                     batch_id, pp, secs))
 
+    def calc_accuracy(self, seqs, corpus):
+        y, logits = self.get_logits(seqs)
+        correct_count = [0,0,0,0]
+        n = [0,0,0,0]
+        acc = [0,0,0,0]
+
+        for i in range(len(y)):
+            correct_index = y[i]
+            guess_index = np.argmax(logits[i])
+            correct_label = self.master_vocab.master_vocab_list[correct_index]
+            guess_label = self.master_vocab.master_vocab_list[guess_index]
+
+            if correct_index == guess_index:
+                correct = 1
+            else:
+                correct = 0
+
+            if correct_label in corpus.category_item_lists_dict['A']:
+                category = 0
+            if correct_label in corpus.category_item_lists_dict['x']:
+                category = 1
+            if correct_label in corpus.category_item_lists_dict['B']:
+                category = 2
+            if correct_label in corpus.category_item_lists_dict['.']:
+                category = 3
+
+            correct_count[category] += correct
+            n[category] += 1
+
+            for j in range(len(n)):
+                if n[j] == 0:
+                    acc[j] = -1
+                else:
+                    acc[j] = float(correct_count[j])/n[j]
+
+        return acc
+
     def calc_pp(self, seqs):
-        print('Calculating perplexity...')
+        #print('Calculating perplexity...')
         self.model.eval()  # protects from dropout
         batch = np.vstack([self.to_windows(seq) for seq in seqs])  # batch contains all seqs
         self.model.batch_size = len(batch)
@@ -124,14 +163,14 @@ class RNN:
         hidden = self.model.init_hidden()  # this must be here to re-init graph
         logits = self.model(inputs, hidden)
         #
+
         self.optimizer.zero_grad()  # sets all gradients to zero
         loss = self.criterion(logits, targets)
         errors = loss.item()
         res = np.exp(errors / len(seqs))
         return res
 
-    def save_logits_to_disk(self, seqs):  # TODO test
-        print('Saving logits to disk...')
+    def get_logits(self, seqs):
         self.model.eval()  # protects from dropout
         batch = np.vstack([self.to_windows(seq) for seq in seqs])  # batch contains all seqs
         self.model.batch_size = len(batch)
@@ -140,11 +179,13 @@ class RNN:
         inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
         hidden = self.model.init_hidden()  # this must be here to re-init graph
         logits = self.model(inputs, hidden)
-        #
         data = logits.detach().numpy()
-        df = pd.DataFrame(index=y, data=data)
+
+        return y, data
+
+    def save_logits_to_disk(self, y, logits):  # TODO test
+        df = pd.DataFrame(index=y, data=logits)
         df.index.name = 'y'
-        print(df)
         df.to_csv('logits.csv')
 
 class TorchRNN(torch.nn.Module):
@@ -177,8 +218,8 @@ class TorchRNN(torch.nn.Module):
         self.wy.weight.data.uniform_(-self.init_range, self.init_range)
 
     def init_hidden(self):
-        print('Initializing hidden weights with size [{}, {}, {}]'.format(
-            self.num_layers, self.batch_size, self.hidden_size))
+        #print('Initializing hidden weights with size [{}, {}, {}]'.format(
+            #self.num_layers, self.batch_size, self.hidden_size))
         weight = next(self.parameters()).data
         if self.rnn_type == 'lstm':
             res = (torch.autograd.Variable(weight.new(self.num_layers,
