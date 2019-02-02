@@ -1,7 +1,8 @@
 import random
 from src import config
 
-class AxbCorpus():
+
+class AxbCorpus:
 
     def __init__(self,
                  ab_types = config.AxB.ab_types,
@@ -13,7 +14,7 @@ class AxbCorpus():
                  sample=config.AxB.sample,
                  num_sequences=config.AxB.num_sequences,
                  noise=config.AxB.noise,
-                 seed = config.General.seed,
+                 seed=config.General.seed,
                  ):
 
         self.num_tokens = 0
@@ -44,9 +45,10 @@ class AxbCorpus():
         self.stimulus_category_dict = {}
         self.category_item_lists_dict = {'A': [], 'B': [], 'x': [], '.': ['.']}
 
-        self.vocab_list.append('.')
-        self.vocab_index_dict['.'] = 0
-        self.vocab_freq_dict['.'] = 0
+        if self.punct:
+            self.vocab_list.append('.')
+            self.vocab_index_dict['.'] = 0
+            self.vocab_freq_dict['.'] = 0
 
         self.generate_vocab()
         self.generate_sequence_population()

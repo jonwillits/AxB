@@ -3,22 +3,20 @@ from src import rnn
 from src import vocab
 
 ab_types = 2
-x_train_types = 4
-x_test_types = 5
-max_distance = 1
+x_train_types = 2
+x_test_types = 2
+max_distance = 2
 min_distance = 1
 
 
-corpus_list = [
-    corpus.AxbCorpus(ab_types, x_train_types, max_distance, min_distance),
-    corpus.AxbCorpus(ab_types, x_test_types, max_distance, min_distance)
-]
+train_corpus = corpus.AxbCorpus(ab_types, x_train_types, max_distance, min_distance)
+test_corpus = corpus.AxbCorpus(ab_types, x_test_types, max_distance, min_distance)
 
-master_vocab = vocab.Vocab(corpus_list)
+master_vocab = vocab.Vocab(train_corpus, test_corpus)
+train_seqs = master_vocab.generate_index_sequences(train_corpus)
+for seq in train_seqs:
+    print(seq)
 
 srn = rnn.RNN(master_vocab)
-
-corpus = 0
-sequences = master_vocab.generate_index_sequences(corpus_number=corpus)
-srn.train(sequences, corpus_list[corpus])
+srn.train(train_seqs, train_corpus, verbose=False)
 
