@@ -60,8 +60,12 @@ for seqs, name in [(train_seqs, 'train'), (test_seqs, 'test'), (novel_seqs, 'nov
     y = all_windows[:, -1]
     logits = srn.calc_logits(seqs)
     all_probs = softmax(logits, axis=1)
-    punct_probs, a_probs, b_probs, x_probs = np.split(all_probs, [1, 3, 5, 13], axis=1)[:-1]
 
+    # TODO if params change, then split_indices must change
+    assert NUM_AB_TYPES == 2
+    assert NUM_X_TRAIN_TYPES == 4
+    assert NUM_X_TEST_TYPES == 8
+    punct_probs, a_probs, b_probs, x_probs = np.split(all_probs, [1, 3, 5, 13], axis=1)[:-1]
     for probs, stimulus_category in [(punct_probs, '.'), (a_probs, 'A'), (b_probs, 'B'), (x_probs, 'x')]:
         print('Evaluating using stimulus category="{}"'.format(stimulus_category))
         pp = srn.calc_seqs_pp(seqs)
