@@ -55,7 +55,7 @@ class RNN:
         windows = [padded[i: i + bptt_p1] for i in range(seq_len)]
         return windows
 
-    def gen_batches(self, seqs, num_seqs_in_batch=None):
+    def batch_windows(self, seqs, num_seqs_in_batch=None):
         """
         a batch, by default, contains all windows in a single sequence.
         setting "num_seqs_in_batch" larger than 1, will include all windows in "num_seqs_in_batch" sequences
@@ -81,10 +81,10 @@ class RNN:
         if self.shuffle_seqs:
             np.random.shuffle(seqs)
 
-        for step, batch in enumerate(self.gen_batches(seqs)):
-            self.model.batch_size = len(batch)  # dynamic batch size
-            x = batch[:, :-1]
-            y = batch[:, -1]
+        for step, windows in enumerate(self.batch_windows(seqs)):
+            self.model.batch_size = len(windows)  # dynamic batch size
+            x = windows[:, :-1]
+            y = windows[:, -1]
 
             # forward step
             inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
@@ -180,8 +180,7 @@ class RNN:
 
         # forward pass
         hidden = self.model.init_hidden()  # this must be here to re-init graph
-        logits_torch = self.model(inputs, hidden)
-        logits = logits_torch.detach().numpy()
+        logits = self.model(inputs, hidden).detach().numpy()
         return logits
 
 

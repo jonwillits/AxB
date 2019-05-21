@@ -31,4 +31,4 @@ class RNN:
     epochs = 100
     learning_rate = 0.1
     init_range = 0.001
-    optimization = 'adagrad'
+    optimization = 'sgd'

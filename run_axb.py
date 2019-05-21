@@ -1,9 +1,23 @@
 import numpy as np
 import pandas as pd
+from scipy.special import softmax
 
 from src.corpus import AxbCorpus
 from src.rnn import RNN
 from src.vocab import Vocab
+
+
+"""
+note on perplexity (pp):
+when 
+NUM_AB_TYPES = 2
+NUM_X_TRAIN_TYPES = 4
+NUM_X_TEST_TYPES = 8
+MAX_DISTANCE = 1
+MIN_DISTANCE = 1
+then, theoretical minimum should be 13/8=1.625, where 13=2+4+1+1 (sum of pps at each position)
+
+"""
 
 
 NUM_AB_TYPES = 2
@@ -42,8 +56,4 @@ for epoch in range(srn.epochs):
 all_windows = np.vstack([srn.to_windows(seq) for seq in train_seqs])
 y = all_windows[:, -1]
 logits = srn.calc_logits(train_seqs)
-
-# save to disk
-df = pd.DataFrame(index=y, data=logits)
-df.index.name = 'y'
-df.to_csv('logits.csv')
+print(softmax(logits, axis=1).round(2))
