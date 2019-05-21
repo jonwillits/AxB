@@ -29,6 +29,6 @@ class RNN:
     shuffle_seqs = True
     hidden_size = 10
     epochs = 100
-    learning_rate = [0.1, 0.01, 10]
+    learning_rate = 0.1
     init_range = 0.001
     optimization = 'adagrad'

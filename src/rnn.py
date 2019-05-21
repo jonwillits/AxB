@@ -20,8 +20,7 @@ class RNN:
                  num_seqs_in_batch=config.RNN.num_seqs_in_batch,
                  shuffle_seqs=config.RNN.shuffle_seqs,
                  num_layers=config.RNN.num_layers,
-                 dropout_prob=config.RNN.dropout_prob,
-                 grad_clip=config.RNN.grad_clip):
+                 dropout_prob=config.RNN.dropout_prob):
         # input
         self.master_vocab = master_vocab
         self.input_size = master_vocab.master_vocab_size
@@ -33,7 +32,6 @@ class RNN:
         self.seed = seed
         self.dropout_prob = dropout_prob
         self.num_layers = num_layers
-        self.grad_clip = grad_clip
         self.bptt = bptt
         self.num_seqs_in_batch = num_seqs_in_batch
         self.shuffle_seqs = shuffle_seqs
@@ -44,35 +42,11 @@ class RNN:
         self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size, self.init_range)
         self.criterion = torch.nn.CrossEntropyLoss()
         if self.optimization == 'adagrad':
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), lr=self.learning_rate[0])
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), lr=self.learning_rate)
         elif self.optimization == 'sgd':
-            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate[0])
+            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
         else:
             raise AttributeError('Invalid arg to "optimizer"')
-
-    def train(self, seqs, corpus, verbose=False, num_eval_steps=10):
-        lr = self.learning_rate[0]  # initial
-        decay = self.learning_rate[1]
-        num_epochs_without_decay = self.learning_rate[2]
-
-        # epochs
-        print('{:13s} {:10s}{:10s}{:10s}{:10s}{:10s}'.format('Epoch', 'Seqs-PP', 'A', 'x', 'B', '.'))
-        for epoch in range(self.epochs):
-
-            # train
-            lr_decay = decay ** max(epoch - num_epochs_without_decay, 0)
-            lr = lr * lr_decay  # decay lr if it is time
-            self.train_epoch(seqs, lr, verbose, num_eval_steps)
-
-            # evaluate
-            pp = self.calc_seqs_pp(seqs)
-            accs = self.calc_accuracies(seqs, corpus)
-            print('{:8}: {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}'.format(
-                epoch, pp, accs[0], accs[1], accs[2], accs[3] if corpus.punct else np.nan))
-
-    def retrieve_wx_for_analysis(self):
-        wx_weights = self.model.wx.weight.detach().cpu().numpy()  # if stored on gpu
-        return wx_weights
 
     def to_windows(self, seq):
         padded = [self.pad_id] * self.bptt + seq
@@ -96,7 +70,7 @@ class RNN:
             batch = np.vstack(windowed_seqs_partition)
             yield batch
 
-    def train_epoch(self, seqs, lr, verbose, num_eval_steps):
+    def train_epoch(self, seqs, verbose, num_eval_steps):
         """
         each batch contains all windows in a sequence.
         hidden states are never saved. not across windows, and not across sequences.
@@ -122,12 +96,7 @@ class RNN:
             self.optimizer.zero_grad()  # sets all gradients to zero
             loss = self.criterion(logits, targets)
             loss.backward()
-            if self.grad_clip is not None:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
-                for p in self.model.parameters():
-                    p.data.add_(-lr, p.grad.data)  # TODO lr decay only happens when using grad clip
-            else:
-                self.optimizer.step()
+            self.optimizer.step()
 
             # console
             if step % num_eval_steps == 0 and verbose:
