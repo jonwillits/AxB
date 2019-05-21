@@ -16,18 +16,16 @@ class AxB:
     # if sample is true, num_sequences will be randomly sampled from full set
     sample = False
     num_sequences = 10
-    noise = 0.1
 
 
 class RNN:
     rnn_type = 'srn'
     num_layers = 1
     dropout_prob = 0.0
-    grad_clip = None
-    bptt = 3  # if larger than length of seq, pad_id is used to buffer left side of windows
+    bptt = 2  # if larger than length of seq, pad_id is used to buffer left side of windows
     num_seqs_in_batch = 1
     shuffle_seqs = True
-    hidden_size = 10
+    hidden_size = 8
     epochs = 200
     learning_rate = 0.1
     init_range = 0.001

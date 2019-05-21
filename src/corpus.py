@@ -13,7 +13,6 @@ class AxbCorpus:
 
                  sample=config.AxB.sample,
                  num_sequences=config.AxB.num_sequences,
-                 noise=config.AxB.noise,
                  seed=config.General.seed,
                  ):
 
@@ -32,7 +31,6 @@ class AxbCorpus:
         self.x_types = x_types
         self.max_distance = max_distance
         self.min_distance = min_distance
-        self.noise = noise
         self.punct = punct
         self.seed = seed
         self.sample_size = 0
@@ -154,10 +152,9 @@ class AxbCorpus:
         if self.sample:
             for i in range(self.num_sequences):
                 self.sequence_sample.append(random.choice(self.sequence_population))
-            self.sample_size = len(self.sequence_sample)
         else:
             self.sequence_sample = self.sequence_population
-            self.sample_size = self.num_sequences
+        self.sample_size = len(self.sequence_sample)
 
 
 

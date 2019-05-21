@@ -1,10 +1,11 @@
 import numpy as np
-from scipy.special import softmax
+
 
 from src.corpus import AxbCorpus
 from src.rnn import RNN
 from src.vocab import Vocab
-from src.utils import calc_cross_entropy
+from src.utils import evaluate
+from src.utils import plot_pp_trajs
 
 
 """
@@ -38,14 +39,23 @@ master_vocab = Vocab(train_corpus, test_corpus)
 train_seqs = master_vocab.generate_index_sequences(train_corpus)
 test_seqs = master_vocab.generate_index_sequences(test_corpus)
 novel_seqs = [seq for seq in test_seqs if seq not in train_seqs]
-for seq in train_seqs:
-    print(seq)
+seq_names = ('train', 'test', 'novel')
+seqs_data = list(zip((train_seqs, test_seqs, novel_seqs), seq_names))
+print(master_vocab.master_vocab_list)
 
-# train SRN
+# train + evaluate SRN
+name2cat2cat_pps = {name: {cat: [] for cat in ['.', 'A', 'x', 'B']} for name in seq_names}
+name2cat2type_pps = {name: {cat: [] for cat in ['.', 'A', 'x', 'B']} for name in seq_names}
 srn = RNN(master_vocab)
+
 print('{:13s} {:10s}{:10s}{:10s}{:10s}{:10s}'.format('Epoch', 'Seqs-PP', 'A', 'x', 'B', '.'))
 for epoch in range(srn.epochs):
     # evaluate
+    # TODO if params change, then split_indices must change
+    assert NUM_AB_TYPES == 2
+    assert NUM_X_TRAIN_TYPES == 4
+    assert NUM_X_TEST_TYPES == 8
+    evaluate(srn, master_vocab, seqs_data, name2cat2cat_pps, name2cat2type_pps)
     pp = srn.calc_seqs_pp(train_seqs)
     accuracies = srn.calc_accuracies(train_seqs, train_corpus)
     print('{:8}: {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}'.format(
@@ -53,31 +63,8 @@ for epoch in range(srn.epochs):
     # train
     srn.train_epoch(train_seqs, VERBOSE, NUM_EVAL_STEPS)
 
-# evaluation
-for seqs, name in [(train_seqs, 'train'), (test_seqs, 'test'), (novel_seqs, 'novel')]:
-    print('Evaluating on {} sequences...'.format(name))
-    all_windows = np.vstack([srn.to_windows(seq) for seq in seqs])
-    y = all_windows[:, -1]
-    logits = srn.calc_logits(seqs)
-    all_probs = softmax(logits, axis=1)
-
-    # TODO if params change, then split_indices must change
-    assert NUM_AB_TYPES == 2
-    assert NUM_X_TRAIN_TYPES == 4
-    assert NUM_X_TEST_TYPES == 8
-    punct_probs, a_probs, b_probs, x_probs = np.split(all_probs, [1, 3, 5, 13], axis=1)[:-1]
-    for probs, stimulus_category in [(punct_probs, '.'), (a_probs, 'A'), (b_probs, 'B'), (x_probs, 'x')]:
-        print('Evaluating using stimulus category="{}"'.format(stimulus_category))
-        pp = srn.calc_seqs_pp(seqs)
-        predictions = probs.sum(axis=1)
-        targets = np.array([1 if stimulus_category in master_vocab.master_vocab_list[yi] else 0 for yi in y])
-
-        #
-        print(probs.round(2))
-        print(predictions.round(2))
-        print(targets)
-        print(targets*np.log(predictions+1e-9).round(2))
-        print(calc_cross_entropy(predictions, targets))
-        print()
-
-    print('------------------------------------------------------------')
+# plot
+for name in seq_names:
+    plot_pp_trajs(name2cat2cat_pps[name], name, 'Category')
+for name in seq_names:
+    plot_pp_trajs(name2cat2type_pps[name], name, 'Type')

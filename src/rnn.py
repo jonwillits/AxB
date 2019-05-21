@@ -1,7 +1,6 @@
 import torch
 import time
 import numpy as np
-import pandas as pd
 from cytoolz import itertoolz
 from src import config
 
@@ -39,7 +38,8 @@ class RNN:
         self.optimization = optimization
         self.init_range = init_range
         #
-        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size, self.hidden_size, self.init_range)
+        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size,
+                              self.hidden_size, self.init_range, self.dropout_prob)
         self.criterion = torch.nn.CrossEntropyLoss()
         if self.optimization == 'adagrad':
             self.optimizer = torch.optim.Adagrad(self.model.parameters(), lr=self.learning_rate)
@@ -185,13 +185,14 @@ class RNN:
 
 
 class TorchRNN(torch.nn.Module):
-    def __init__(self, rnn_type, num_layers, input_size, hidden_size, init_range):
+    def __init__(self, rnn_type, num_layers, input_size, hidden_size, init_range, dropout_prob):
         super().__init__()
         self.rnn_type = rnn_type
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.batch_size = None  # is set dynamically
         self.init_range = init_range
+        self.dropout_prob = dropout_prob
         #
         self.wx = torch.nn.Embedding(input_size, self.hidden_size)
         if self.rnn_type == 'lstm':
