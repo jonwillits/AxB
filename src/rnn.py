@@ -70,12 +70,6 @@ class RNN:
             print('{:8}: {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}'.format(
                 epoch, pp, accs[0], accs[1], accs[2], accs[3] if corpus.punct else np.nan))
 
-        # print and save evaluation
-        all_windows = np.vstack([self.to_windows(seq) for seq in seqs])
-        y = all_windows[:, -1]
-        logits = self.calc_logits(seqs)
-        self.save_logits_to_disk(y, logits)
-
     def retrieve_wx_for_analysis(self):
         wx_weights = self.model.wx.weight.detach().cpu().numpy()  # if stored on gpu
         return wx_weights
@@ -220,12 +214,6 @@ class RNN:
         logits_torch = self.model(inputs, hidden)
         logits = logits_torch.detach().numpy()
         return logits
-
-    @staticmethod
-    def save_logits_to_disk(y, logits):  # TODO test
-        df = pd.DataFrame(index=y, data=logits)
-        df.index.name = 'y'
-        df.to_csv('logits.csv')
 
 
 class TorchRNN(torch.nn.Module):
