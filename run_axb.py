@@ -1,10 +1,10 @@
 import numpy as np
-import pandas as pd
 from scipy.special import softmax
 
 from src.corpus import AxbCorpus
 from src.rnn import RNN
 from src.vocab import Vocab
+from src.utils import calc_cross_entropy
 
 
 """
@@ -54,12 +54,26 @@ for epoch in range(srn.epochs):
     srn.train_epoch(train_seqs, VERBOSE, NUM_EVAL_STEPS)
 
 # evaluation
-for seqs in [train_seqs, test_seqs, novel_seqs]:
+for seqs, name in [(train_seqs, 'train'), (test_seqs, 'test'), (novel_seqs, 'novel')]:
+    print('Evaluating on {} sequences...'.format(name))
     all_windows = np.vstack([srn.to_windows(seq) for seq in seqs])
     y = all_windows[:, -1]
     logits = srn.calc_logits(seqs)
-    pp = srn.calc_seqs_pp(seqs)
-    print(master_vocab.master_vocab_list)
-    print(softmax(logits, axis=1).round(2))
-    print(pp)
-    print()
+    all_probs = softmax(logits, axis=1)
+    punct_probs, a_probs, b_probs, x_probs = np.split(all_probs, [1, 3, 5, 13], axis=1)[:-1]
+
+    for probs, stimulus_category in [(punct_probs, '.'), (a_probs, 'A'), (b_probs, 'B'), (x_probs, 'x')]:
+        print('Evaluating using stimulus category="{}"'.format(stimulus_category))
+        pp = srn.calc_seqs_pp(seqs)
+        predictions = probs.sum(axis=1)
+        targets = np.array([1 if stimulus_category in master_vocab.master_vocab_list[yi] else 0 for yi in y])
+
+        #
+        print(probs.round(2))
+        print(predictions.round(2))
+        print(targets)
+        print(targets*np.log(predictions+1e-9).round(2))
+        print(calc_cross_entropy(predictions, targets))
+        print()
+
+    print('------------------------------------------------------------')

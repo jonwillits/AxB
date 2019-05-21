@@ -61,11 +61,7 @@ class AxbCorpus:
         vocab_counter = 1
 
         for i in range(self.ab_types):
-
             a = "A" + str(i+1)
-            b = "B" + str(i+1)
-            self.axb_pair_list.append((a,b))
-
             self.a_list.append(a)
             self.vocab_list.append(a)
             self.vocab_index_dict[a] = vocab_counter
@@ -74,13 +70,20 @@ class AxbCorpus:
             self.category_item_lists_dict['A'].append(a)
             vocab_counter += 1
 
+        for i in range(self.ab_types):
+            b = "B" + str(i + 1)
             self.b_list.append(b)
             self.vocab_list.append(b)
             self.vocab_index_dict[b] = vocab_counter
             self.vocab_freq_dict[b] = 0
-            self.stimulus_category_dict[a] = 'B'
+            self.stimulus_category_dict[b] = 'B'
             self.category_item_lists_dict['B'].append(b)
             vocab_counter += 1
+
+        for i in range(self.ab_types):
+            a = "A" + str(i + 1)
+            b = "B" + str(i + 1)
+            self.axb_pair_list.append((a, b))
 
         for i in range(self.x_types):
             x = "x" + str(i + 1)
