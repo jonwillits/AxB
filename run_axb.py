@@ -33,10 +33,11 @@ VERBOSE = False
 train_corpus = AxbCorpus(NUM_AB_TYPES, NUM_X_TRAIN_TYPES, MAX_DISTANCE, MIN_DISTANCE)
 test_corpus = AxbCorpus(NUM_AB_TYPES, NUM_X_TEST_TYPES, MAX_DISTANCE, MIN_DISTANCE)
 
-# train sequences
+# sequences
 master_vocab = Vocab(train_corpus, test_corpus)
 train_seqs = master_vocab.generate_index_sequences(train_corpus)
-print(master_vocab.master_vocab_size)
+test_seqs = master_vocab.generate_index_sequences(test_corpus)
+novel_seqs = [seq for seq in test_seqs if seq not in train_seqs]
 for seq in train_seqs:
     print(seq)
 
@@ -53,7 +54,12 @@ for epoch in range(srn.epochs):
     srn.train_epoch(train_seqs, VERBOSE, NUM_EVAL_STEPS)
 
 # evaluation
-all_windows = np.vstack([srn.to_windows(seq) for seq in train_seqs])
-y = all_windows[:, -1]
-logits = srn.calc_logits(train_seqs)
-print(softmax(logits, axis=1).round(2))
+for seqs in [train_seqs, test_seqs, novel_seqs]:
+    all_windows = np.vstack([srn.to_windows(seq) for seq in seqs])
+    y = all_windows[:, -1]
+    logits = srn.calc_logits(seqs)
+    pp = srn.calc_seqs_pp(seqs)
+    print(master_vocab.master_vocab_list)
+    print(softmax(logits, axis=1).round(2))
+    print(pp)
+    print()
