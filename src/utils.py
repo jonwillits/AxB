@@ -18,8 +18,7 @@ def calc_cross_entropy(predictions, targets, epsilon=1e-12):
     return ce
 
 
-def evaluate(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps,
-             verbose_cat=False, verbose_type=True):
+def evaluate(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps, verbose_cat, verbose_type):
     for seqs, name in seqs_data:
         if verbose_cat or verbose_type:
             print('Evaluating on {} sequences...'.format(name))
@@ -69,7 +68,7 @@ def evaluate(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps,
                 print(predictions.round(2))
                 print(targets)
                 print(targets * np.log(predictions + 1e-9).round(2))
-                print(pp_cat)
+                print(pp_type)
                 print()
 
         if verbose_cat or verbose_type:
