@@ -11,8 +11,7 @@ class AxbCorpus:
                  min_distance = config.AxB.min_distance,
                  punct = config.AxB.punct,
 
-                 sample=config.AxB.sample,
-                 num_sequences=config.AxB.num_sequences,
+                 sample_size=config.AxB.sample_size,
                  seed=config.General.seed,
                  ):
 
@@ -25,15 +24,14 @@ class AxbCorpus:
         self.vocab_index_dict = {}
         self.vocab_freq_dict = {}
 
-        self.num_sequences = num_sequences
-        self.sample = sample
+        self.sample_size = sample_size
         self.ab_types = ab_types
         self.x_types = x_types
         self.max_distance = max_distance
         self.min_distance = min_distance
         self.punct = punct
         self.seed = seed
-        self.sample_size = 0
+        self.num_sequences = None
 
         self.axb_pair_list = []
         self.a_list = []
@@ -149,12 +147,12 @@ class AxbCorpus:
 
     def generate_sequence_sample(self):
 
-        if self.sample:
-            for i in range(self.num_sequences):
+        if self.sample_size is not None:
+            for i in range(self.sample_size):
                 self.sequence_sample.append(random.choice(self.sequence_population))
         else:
             self.sequence_sample = self.sequence_population
-        self.sample_size = len(self.sequence_sample)
+        self.num_sequences = len(self.sequence_sample)
 
 
 

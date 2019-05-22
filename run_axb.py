@@ -18,6 +18,12 @@ MAX_DISTANCE = 1
 MIN_DISTANCE = 1
 then, theoretical minimum should be 13/8=1.625, where 13=2+4+1+1 (sum of pps at each position)
 
+
+initial perplexity for categories should be:
+-np.log(1/master_vocab-size)*num_windows_where_target / num_windows
+An example, given the hyper parameters above:
+-np.log(1/13)*8 / 32 = 0.641
+(8 is the number of times in the sequences where the answer is correct)
 """
 
 
@@ -29,6 +35,7 @@ MIN_DISTANCE = 1
 
 NUM_EVAL_STEPS = 10
 VERBOSE = False
+
 
 # corpora
 train_corpus = AxbCorpus(NUM_AB_TYPES, NUM_X_TRAIN_TYPES, MAX_DISTANCE, MIN_DISTANCE)
@@ -42,6 +49,12 @@ novel_seqs = [seq for seq in test_seqs if seq not in train_seqs]
 seq_names = ('train', 'test', 'novel')
 seqs_data = list(zip((train_seqs, test_seqs, novel_seqs), seq_names))
 print(master_vocab.master_vocab_list)
+
+# check
+avg_window_size = (1 if train_corpus.punct else 0) + 2 + np.mean([MAX_DISTANCE, MIN_DISTANCE])
+num_windows = avg_window_size * train_corpus.num_sequences
+max_pp = -np.log(1/master_vocab.master_vocab_size) * train_corpus.num_sequences / num_windows
+
 
 # train + evaluate SRN
 name2cat2cat_pps = {name: {cat: [] for cat in ['.', 'A', 'x', 'B']} for name in seq_names}
@@ -65,6 +78,6 @@ for epoch in range(srn.epochs):
 
 # plot
 for name in seq_names:
-    plot_pp_trajs(name2cat2cat_pps[name], name, 'Category')
+    plot_pp_trajs(name2cat2cat_pps[name], name, 'Category', y_max=max_pp)
 for name in seq_names:
-    plot_pp_trajs(name2cat2type_pps[name], name, 'Type')
+    plot_pp_trajs(name2cat2type_pps[name], name, 'Type', y_max=1.0)

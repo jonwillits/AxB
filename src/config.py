@@ -11,10 +11,8 @@ class AxB:
     min_distance = 1
     max_distance = 1
     punct = True
-
-    # if sample is False, all combos will be generated
-    # if sample is true, num_sequences will be randomly sampled from full set
-    sample = False
+    #
+    sample_size = None  # if None, full set is used, else sample from full set
     num_sequences = 10
 
 
