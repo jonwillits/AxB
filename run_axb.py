@@ -35,7 +35,7 @@ An example, given the hyper parameters above, for types in A:
 
 NUM_AB_TYPES = 2
 NUM_X_TRAIN_TYPES = 4
-NUM_X_TEST_TYPES = 8
+NUM_X_TEST_TYPES = 4
 MAX_DISTANCE = 1
 MIN_DISTANCE = 1
 
@@ -53,10 +53,13 @@ test_corpus = AxbCorpus(NUM_AB_TYPES, NUM_X_TEST_TYPES, MAX_DISTANCE, MIN_DISTAN
 master_vocab = Vocab(train_corpus, test_corpus)
 train_seqs = master_vocab.generate_index_sequences(train_corpus)
 test_seqs = master_vocab.generate_index_sequences(test_corpus)
-novel_seqs = [seq for seq in test_seqs if seq not in train_seqs]
+novel_seqs = [seq for seq in test_seqs if seq not in train_seqs] or test_seqs
 seq_names = ('train', 'test', 'novel')
 seqs_data = list(zip((train_seqs, test_seqs, novel_seqs), seq_names))
+
 print(master_vocab.master_vocab_list)
+for seq in novel_seqs:
+    print(train_seqs)
 
 # max_cat_pp is is cat_pp for punctuation
 # because the punctuation category only consists of 1 type and therefore has the least probability mass
@@ -78,11 +81,11 @@ srn = RNN(master_vocab)
 print('{:13s} {:10s}{:10s}{:10s}{:10s}{:10s}'.format('Epoch', 'Seqs-PP', 'A', 'x', 'B', '.'))
 for epoch in range(srn.epochs):
     # evaluate
-    # TODO if params change, then split_indices must change
-    assert NUM_AB_TYPES == 2
-    assert NUM_X_TRAIN_TYPES == 4
-    assert NUM_X_TEST_TYPES == 8
-    evaluate(srn, master_vocab, seqs_data, name2cat2cat_pps, name2cat2type_pps, CAT_EVAL_VERBOSE, TYPE_EVAL_VERBOSE)
+    assert train_corpus.punct
+    assert test_corpus.punct  # otherwise split_indices not correct
+    split_indices = np.cumsum([1, NUM_AB_TYPES, NUM_AB_TYPES, NUM_X_TEST_TYPES])
+    evaluate(srn, master_vocab, seqs_data, name2cat2cat_pps, name2cat2type_pps, split_indices,
+             CAT_EVAL_VERBOSE, TYPE_EVAL_VERBOSE)
     pp = srn.calc_seqs_pp(train_seqs)
     accuracies = srn.calc_accuracies(train_seqs, train_corpus)
     print('{:8}: {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}  {:8.2f}'.format(

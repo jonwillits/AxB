@@ -18,16 +18,17 @@ def calc_cross_entropy(predictions, targets, epsilon=1e-12):
     return ce
 
 
-def evaluate(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps, verbose_cat, verbose_type):
+def evaluate(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps, split_indices, verbose_cat, verbose_type):
     for seqs, name in seqs_data:
         if verbose_cat or verbose_type:
             print('Evaluating on {} sequences...'.format(name))
+        # logits and softmax probabilities
         all_windows = np.vstack([srn.to_windows(seq) for seq in seqs])
         y = all_windows[:, -1]
         onehots = np.eye(master_vocab.master_vocab_size)[y]
         all_logits = srn.calc_logits(seqs)
         all_probs = softmax(all_logits, axis=1)
-        split_indices = [1, 3, 5, 13]   # TODO make dynamic
+        # split by category
         punct_probs, a_probs, b_probs, x_probs = np.split(all_probs, split_indices, axis=1)[:-1]
         punct_logits, a_logits, b_logits, x_logits = np.split(all_logits, split_indices, axis=1)[:-1]
         punct_onehot, a_onehot, b_onehot, x_onehot = np.split(onehots, split_indices, axis=1)[:-1]
