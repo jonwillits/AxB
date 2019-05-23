@@ -21,12 +21,11 @@ def train_loop(rnn_params, input_params, seqs_data, master_vocab, eval_pps=False
     srn = RNN(master_vocab.master_vocab_size, rnn_params)
     #
     seqs_pp = srn.train_epoch(train_seqs, train=False)
-    accuracies = calc_accuracies(srn, train_seqs, master_vocab)
     num_b_successes = 0
     #
     if config.General.accuracies_verbose:
         print('{:13s} {:10s}{:10s}{:10s}{:10s}{:10s}'.format('Epoch', 'Seqs-PP', 'A', 'x', 'B', '.'))
-    for epoch in range(srn.params.epochs):
+    for epoch in range(srn.params.num_epochs):
         # cat_pp + type_pp
         if eval_pps:
             assert input_params.punct  # required to calculate split_indices correctly
@@ -44,6 +43,9 @@ def train_loop(rnn_params, input_params, seqs_data, master_vocab, eval_pps=False
         # success
         num_b_successes += 1 if accuracies[2] == 1.0 else -num_b_successes
         if num_b_successes >= config.General.success_num_epochs:
-            return name2cat2cat_pps, name2cat2type_pps, True
+            epoch_at_end = epoch
+            break
     else:
-        return name2cat2cat_pps, name2cat2type_pps, False
+        epoch_at_end = srn.params.num_epochs
+
+    return name2cat2cat_pps, name2cat2type_pps, epoch_at_end

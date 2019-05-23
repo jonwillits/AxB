@@ -5,11 +5,11 @@
 
 When,
 
-NUM_AB_TYPES = 2
-NUM_X_TRAIN_TYPES = 4
-NUM_X_TEST_TYPES = 8
-MAX_DISTANCE = 1
-MIN_DISTANCE = 1
+- NUM_AB_TYPES = 2
+- NUM_X_TRAIN_TYPES = 4
+- NUM_X_TEST_TYPES = 8
+- MAX_DISTANCE = 1
+- MIN_DISTANCE = 1
 
 Then, the theoretical minimum should be 13/8=1.625, where 13=2+4+1+1 (sum of pps at each position)
 

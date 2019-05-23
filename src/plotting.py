@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.ticker as ticker
+
+from src import config
 
 
 def plot_cat_and_type_pps(name2cat2cat_pps, name2cat2type_pps, seq_names, max_cat_pp):
@@ -39,18 +42,38 @@ def plot_pp_trajs(cat2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x_
     plt.show()
 
 
-def plot_grid_mat(mat, ytick_labels, xtick_labels, ylabel, xlabel,
-                  figsize=(5, 5), dpi=None, fontsize=12):
+def plot_grid_mat(mat, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel,
+                  figsize=(8, 8), dpi=None, fontsize=12):
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    plt.title('Grid Search Results', fontsize=fontsize)
+    plt.title('Grid Search Results'
+              '\nmax_num_epochs={}'
+              '\nconvergence criterion: accuracy=1.0 for {} consecutive epochs'.format(
+        max_num_epochs, config.General.success_num_epochs), fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
     ax.set_xlabel(xlabel, fontsize=fontsize)
     # heatmap
     print('Plotting heatmap...')
-    ax.imshow(mat,
-              aspect='auto',
-              cmap='gray',
-              interpolation='nearest')
+    im = ax.imshow(mat,
+                   aspect='auto',
+                   cmap='gray',
+                   interpolation='nearest')
+    # label each element
+    text_colors = ['black', 'white']
+    threshold = im.norm(max_num_epochs)  # threshold below which label is white (instead of black)
+    valfmt = ticker.StrMethodFormatter("{x:,}")
+    for i in range(mat.shape[0]):
+        for j in range(mat.shape[1]):
+            is_below = im.norm(mat[i, j]) < threshold
+            print(im.norm(mat[i, j]), threshold, is_below)
+            color = text_colors[int(is_below)]
+            print(color)
+            im.axes.text(j, i, valfmt(mat[i, j].astype(np.int), None),
+                         fontsize=fontsize+2,
+                         horizontalalignment="center",
+                         verticalalignment="center",
+                         color=color)
+
+
     # xticks
     num_cols = len(mat.T)
     ax.set_xticks(np.arange(num_cols))
