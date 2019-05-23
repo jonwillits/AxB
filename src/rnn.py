@@ -6,51 +6,24 @@ from src import config
 
 
 class RNN:
-    def __init__(self,
-                 master_vocab,
-                 rnn_type=config.RNN.rnn_type,
-                 hidden_size=config.RNN.hidden_size,
-                 epochs=config.RNN.epochs,
-                 learning_rate=config.RNN.learning_rate,
-                 optimization=config.RNN.optimization,
-                 init_range=config.RNN.init_range,
-                 seed=config.General.seed,
-                 bptt=config.RNN.bptt,
-                 num_seqs_in_batch=config.RNN.num_seqs_in_batch,
-                 shuffle_seqs=config.RNN.shuffle_seqs,
-                 num_layers=config.RNN.num_layers,
-                 dropout_prob=config.RNN.dropout_prob):
-        # input
-        self.master_vocab = master_vocab
-        self.input_size = master_vocab.master_vocab_size
+    def __init__(self, input_size, params):
+        self.input_size = input_size
         self.pad_id = 0
-        # rnn
-        self.rnn_type = rnn_type
-        self.hidden_size = hidden_size
-        self.epochs = epochs
-        self.seed = seed
-        self.dropout_prob = dropout_prob
-        self.num_layers = num_layers
-        self.bptt = bptt
-        self.num_seqs_in_batch = num_seqs_in_batch
-        self.shuffle_seqs = shuffle_seqs
-        self.learning_rate = learning_rate
-        self.optimization = optimization
-        self.init_range = init_range
+        self.params = params
         #
-        self.model = TorchRNN(self.rnn_type, self.num_layers, self.input_size,
-                              self.hidden_size, self.init_range, self.dropout_prob)
+        self.model = TorchRNN(self.params.rnn_type, self.params.num_layers, self.input_size,
+                              self.params.hidden_size, self.params.init_range, self.params.dropout_prob)
         self.criterion = torch.nn.CrossEntropyLoss()
-        if self.optimization == 'adagrad':
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), lr=self.learning_rate)
-        elif self.optimization == 'sgd':
-            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate)
+        if self.params.optimization == 'adagrad':
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), lr=self.params.learning_rate)
+        elif self.params.optimization == 'sgd':
+            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.params.learning_rate)
         else:
             raise AttributeError('Invalid arg to "optimizer"')
 
     def to_windows(self, seq):
-        padded = [self.pad_id] * self.bptt + seq
-        bptt_p1 = self.bptt + 1
+        padded = [self.pad_id] * self.params.bptt + seq
+        bptt_p1 = self.params.bptt + 1
         seq_len = len(seq)
         windows = [padded[i: i + bptt_p1] for i in range(seq_len)]
         return windows
@@ -61,7 +34,7 @@ class RNN:
         setting "num_seqs_in_batch" larger than 1, will include all windows in "num_seqs_in_batch" sequences
         """
         if num_seqs_in_batch is None:
-            num_seqs_in_batch = self.num_seqs_in_batch
+            num_seqs_in_batch = self.params.num_seqs_in_batch
         windowed_seqs = [self.to_windows(seq) for seq in seqs]
         if len(windowed_seqs) % num_seqs_in_batch != 0:
             raise RuntimeError('Set number of sequences in batch to factor of number of sequences {}.'.format(
@@ -70,18 +43,19 @@ class RNN:
             batch = np.vstack(windowed_seqs_partition)
             yield batch
 
-    def train_epoch(self, seqs, verbose, num_eval_steps):
+    def train_epoch(self, seqs, train=True):
         """
         each batch contains all windows in a sequence.
         hidden states are never saved. not across windows, and not across sequences.
         this guarantees that train updates are never based on any previous leftover information - no cheating.
         """
-        start_time = time.time()
         self.model.train()
-        if self.shuffle_seqs:
+        if self.params.shuffle_seqs:
             np.random.shuffle(seqs)
 
-        for step, windows in enumerate(self.batch_windows(seqs)):
+        total_pp = 0
+        num_batches = 0
+        for windows in self.batch_windows(seqs):
             self.model.batch_size = len(windows)  # dynamic batch size
             x = windows[:, :-1]
             y = windows[:, -1]
@@ -95,73 +69,30 @@ class RNN:
             # backward step
             self.optimizer.zero_grad()  # sets all gradients to zero
             loss = self.criterion(logits, targets)
-            loss.backward()
-            self.optimizer.step()
+            if train:  # otherwise just return perplexity (useful to know before any training has begun)
+                loss.backward()
+                self.optimizer.step()
 
-            # console
-            if step % num_eval_steps == 0 and verbose:
-                batch_pp = np.exp(loss.item())
-                secs = time.time() - start_time
-                print(x)
-                print(y)
-                print("batch {:,} perplexity: {:8.2f} | seconds elapsed in epoch: {:,.0f} ".format(
-                    step, batch_pp, secs))
+            # perplexity
+            total_pp += np.exp(loss.item())
+            num_batches += 1
 
-    def calc_accuracies(self, seqs, corpus):
+        seqs_pp = total_pp / num_batches
+        return seqs_pp
+
+    def to_x_and_y(self, seqs):
         all_windows = np.vstack([self.to_windows(seq) for seq in seqs])
-        y = all_windows[:, -1]
-        logits = self.calc_logits(seqs)
-
-        # init counts
-        correct_count = [0, 0, 0, 0]
-        n = [0, 0, 0, 0]
-        acc = [0, 0, 0, 0]
-
-        for i in range(len(y)):
-            correct_index = y[i]
-            guess_index = np.argmax(logits[i])
-            correct_label = self.master_vocab.master_vocab_list[correct_index]
-            guess_label = self.master_vocab.master_vocab_list[guess_index]
-
-            if correct_index == guess_index:
-                correct = 1
-            else:
-                correct = 0
-
-            if correct_label in corpus.category_item_lists_dict['A']:
-                category = 0
-            elif correct_label in corpus.category_item_lists_dict['x']:
-                category = 1
-            elif correct_label in corpus.category_item_lists_dict['B']:
-                category = 2
-            elif correct_label in corpus.category_item_lists_dict['.']:
-                category = 3
-            else:
-                raise AttributeError('Invalid arg to "category"')
-
-            correct_count[category] += correct
-            n[category] += 1
-
-            for j in range(len(n)):
-                if n[j] == 0:
-                    acc[j] = -1
-                else:
-                    acc[j] = float(correct_count[j])/n[j]
-
-        return acc
-
-    def calc_seqs_pp(self, seqs):
-        self.model.eval()  # protects from dropout
-        all_windows = np.vstack([self.to_windows(seq) for seq in seqs])
-        self.model.batch_size = len(all_windows)
-
-        # prepare inputs
         x = all_windows[:, :-1]
         y = all_windows[:, -1]
+        return x, y
+
+    def calc_seqs_pp(self, seqs):
+        x, y = self.to_x_and_y(seqs)
+        self.model.eval()  # protects from dropout
+        self.model.batch_size = len(x)
+        # forward pass
         inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
         targets = torch.LongTensor(y)
-
-        # forward pass
         hidden = self.model.init_hidden()  # this must be here to re-init graph
         logits = self.model(inputs, hidden)
         self.optimizer.zero_grad()  # sets all gradients to zero
@@ -170,15 +101,11 @@ class RNN:
         return res
 
     def calc_logits(self, seqs):
+        x, y = self.to_x_and_y(seqs)
         self.model.eval()  # protects from dropout
-        all_windows = np.vstack([self.to_windows(seq) for seq in seqs])
-        self.model.batch_size = len(all_windows)
-
-        # prepare inputs
-        x = all_windows[:, :-1]
-        inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
-
+        self.model.batch_size = len(x)
         # forward pass
+        inputs = torch.LongTensor(x.T)  # requires [num_steps, mb_size]
         hidden = self.model.init_hidden()  # this must be here to re-init graph
         logits = self.model(inputs, hidden).detach().numpy()
         return logits

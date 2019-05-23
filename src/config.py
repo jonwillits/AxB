@@ -1,13 +1,17 @@
 
 
 class General:
-    seed = None
+    cat_pp_verbose = False
+    type_pp_verbose = False
+    accuracies_verbose = False
+    success_num_epochs = 10  # TODO test
 
 
-class AxB:
+class Input:
     # the basic parameters of the AxB grammar
-    ab_types = 2
-    x_types = 2
+    num_ab_types = 2
+    num_x_train_types = 8
+    num_x_test_types = 8
     min_distance = 1
     max_distance = 1
     punct = True
