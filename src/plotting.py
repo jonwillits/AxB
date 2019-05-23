@@ -43,9 +43,9 @@ def plot_pp_trajs(cat2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x_
 
 
 def plot_grid_mat(mat, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel,
-                  figsize=(8, 8), dpi=None, fontsize=12):
+                  figsize=(8, 8), dpi=None, fontsize=14):
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    plt.title('Grid Search Results'
+    plt.title('Number of epochs to convergence'
               '\nmax_num_epochs={}'
               '\nconvergence criterion: accuracy=1.0 for {} consecutive epochs'.format(
         max_num_epochs, config.General.success_num_epochs), fontsize=fontsize)
@@ -64,9 +64,7 @@ def plot_grid_mat(mat, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabe
     for i in range(mat.shape[0]):
         for j in range(mat.shape[1]):
             is_below = im.norm(mat[i, j]) < threshold
-            print(im.norm(mat[i, j]), threshold, is_below)
             color = text_colors[int(is_below)]
-            print(color)
             im.axes.text(j, i, valfmt(mat[i, j].astype(np.int), None),
                          fontsize=fontsize+2,
                          horizontalalignment="center",

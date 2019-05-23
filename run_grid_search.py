@@ -14,7 +14,7 @@ PARAMS1 = [0.001, 0.01, 0.1, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 8, 16, 32]
 
-MAX_NUM_EPOCHS = 20
+MAX_NUM_EPOCHS = 500
 
 # params
 input_params = copy(config.Input)
@@ -38,11 +38,7 @@ for i, param1 in enumerate(PARAMS1):
         print_params(rnn_params)
         #
         _, _, epoch_at_end = train_loop(rnn_params, input_params, seqs_data, master_vocab)
-
-        is_success = True if epoch_at_end < MAX_NUM_EPOCHS else False
-        print('is_success={}'.format(is_success))
         grid_mat[i, j] = epoch_at_end
 
-# plot  # TODO label values in grid_mat plot
-print(grid_mat)
+# plot
 plot_grid_mat(grid_mat, MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
