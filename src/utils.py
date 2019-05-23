@@ -32,6 +32,6 @@ def calc_max_type_pp(input_params, num_sequences):
 def print_params(params):
     print()
     print('===============================================')
-    for k, v in params.__dict__.items():
+    for k, v in sorted(params.__dict__.items()):
         if not k.startswith('__'):
             print('{}={}'.format(k, v))

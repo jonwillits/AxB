@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.eval import calc_pps, calc_accuracies
+from src.evaluation import calc_pps, calc_accuracies
 from src.rnn import RNN
 from src import config
 

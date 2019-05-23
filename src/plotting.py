@@ -37,3 +37,31 @@ def plot_pp_trajs(cat2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x_
     plt.legend(loc='best', frameon=False)
     plt.tight_layout()
     plt.show()
+
+
+def plot_grid_mat(mat, ytick_labels, xtick_labels, ylabel, xlabel,
+                  figsize=(5, 5), dpi=None, fontsize=12):
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    plt.title('Grid Search Results', fontsize=fontsize)
+    ax.set_ylabel(ylabel, fontsize=fontsize)
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    # heatmap
+    print('Plotting heatmap...')
+    ax.imshow(mat,
+              aspect='auto',
+              cmap='gray',
+              interpolation='nearest')
+    # xticks
+    num_cols = len(mat.T)
+    ax.set_xticks(np.arange(num_cols))
+    ax.xaxis.set_ticklabels(xtick_labels, rotation=90, fontsize=fontsize)
+    # yticks
+    num_rows = len(mat)
+    ax.set_yticks(np.arange(num_rows))
+    ax.yaxis.set_ticklabels(ytick_labels,  # no need to reverse (because no extent is set)
+                            rotation=0, fontsize=fontsize)
+    # remove ticklines
+    lines = (ax.xaxis.get_ticklines() +
+             ax.yaxis.get_ticklines())
+    plt.setp(lines, visible=False)
+    plt.show()
