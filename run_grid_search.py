@@ -7,6 +7,7 @@ from src.jobs import train_loop
 from src.jobs import make_name2seqs
 from src.corpus import AxbCorpus
 from src.vocab import Vocab
+from src.rnn import RNN
 from src import config
 
 PARAMS1_NAME = 'learning_rate'
@@ -29,8 +30,8 @@ test_corpus = AxbCorpus(input_params,  num_x_types=input_params.num_x_test_types
 master_vocab = Vocab(train_corpus, test_corpus)
 name2seqs = make_name2seqs(master_vocab, train_corpus, test_corpus)
 
-
 # grid search
+srn = RNN(master_vocab.master_vocab_size, rnn_params)
 grid_mat = np.zeros((len(PARAMS1), len(PARAMS2)))
 for i, param1 in enumerate(PARAMS1):
     for j, param2 in enumerate(PARAMS2):
@@ -42,7 +43,7 @@ for i, param1 in enumerate(PARAMS1):
         #
         sum_b_type_pp_at_end = 0.0
         for _ in range(config.General.num_reps):
-            _, _, b_type_pp_at_end = train_loop(rnn_params, input_params, name2seqs, master_vocab)
+            _, _ = train_loop(srn, input_params, name2seqs, master_vocab)
             sum_b_type_pp_at_end += b_type_pp_at_end
         avg_b_type_pp_at_end = sum_b_type_pp_at_end / config.General.num_reps
         print('avg_b_type_pp_at_end={}'.format(avg_b_type_pp_at_end))

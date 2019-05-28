@@ -13,11 +13,11 @@ def calc_max_cat_pp(input_params, num_sequences, master_vocab_size):
     avg_window_size = (1 if input_params.punct else 0) + 2 + np.mean([input_params.max_distance,
                                                                       input_params.min_distance])
     num_windows = avg_window_size * num_sequences
-    max_cat_pp = -np.log(1 / master_vocab_size) * num_sequences / num_windows
+    max_cat_pp = np.exp(-np.log(1 / master_vocab_size) * num_sequences / num_windows)
     return max_cat_pp
 
 
-def calc_max_type_pp(input_params, num_sequences):
+def calc_max_type_pp(input_params):
     # max_type_pp is type_pp for the category which has largest set size
     # because least amount of probability mass is initially devoted to the correct type
     #
@@ -25,7 +25,7 @@ def calc_max_type_pp(input_params, num_sequences):
     max_num_types = np.max([input_params.num_ab_types,
                             input_params.num_x_test_types])
     window_size = input_params.max_distance + 1 + 1 + 1
-    max_type_pp = -np.log(1 / max_num_types) * (1 / window_size)
+    max_type_pp = np.exp(-np.log(1 / max_num_types) * (1 / window_size))
     return max_type_pp
 
 
