@@ -9,7 +9,7 @@ def make_seqs_data(master_vocab, train_corpus, test_corpus):
     train_seqs = master_vocab.generate_index_sequences(train_corpus)
     test_seqs = master_vocab.generate_index_sequences(test_corpus)
     novel_seqs = [seq for seq in test_seqs if seq not in train_seqs] or test_seqs
-    seqs_data = ((train_seqs, test_seqs, novel_seqs), ('train', 'test', 'novel'))
+    seqs_data = [(train_seqs, test_seqs, novel_seqs), ('train', 'test', 'novel')]
     return seqs_data
 
 
@@ -42,10 +42,10 @@ def train_loop(rnn_params, input_params, seqs_data, master_vocab, eval_pps=False
         seqs_pp = srn.train_epoch(train_seqs, train=True)
         # success
         num_b_successes += 1 if accuracies[2] == 1.0 else -num_b_successes
-        if num_b_successes >= config.General.success_num_epochs:
-            epoch_at_end = epoch
+        if num_b_successes >= config.General.success_num_epochs and eval_pps is False:
+            epoch_before_conv = epoch + 1 - config.General.success_num_epochs
             break
     else:
-        epoch_at_end = srn.params.num_epochs
+        epoch_before_conv = srn.params.num_epochs
 
-    return name2cat2cat_pps, name2cat2type_pps, epoch_at_end
+    return name2cat2cat_pps, name2cat2type_pps, epoch_before_conv

@@ -1,6 +1,7 @@
 
 
 class General:
+    num_reps = 5
     cat_pp_verbose = False
     type_pp_verbose = False
     accuracies_verbose = False
@@ -27,8 +28,8 @@ class RNN:
     bptt = 2  # if larger than length of seq, pad_id is used to buffer left side of windows
     num_seqs_in_batch = 1
     shuffle_seqs = True
-    hidden_size = 8
+    hidden_size = 4
     num_epochs = 200
-    learning_rate = 0.1
+    learning_rate = 0.25
     init_range = 0.001
-    optimization = 'sgd'
+    optimization = 'adagrad'

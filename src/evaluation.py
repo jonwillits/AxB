@@ -43,12 +43,11 @@ def calc_accuracies(srn, seqs, master_vocab):
 
 
 def calc_pps(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps, split_indices):
-    for seqs, name in zip(*seqs_data):
+    for seqs, seq_name in zip(*seqs_data):
         if config.General.cat_pp_verbose or config.General.type_pp_verbose:
-            print('Evaluating on {} sequences...'.format(name))
+            print('Evaluating on {} sequences...'.format(seq_name))
         # logits and softmax probabilities
-        all_windows = np.vstack([srn.to_windows(seq) for seq in seqs])
-        y = all_windows[:, -1]
+        x, y = srn.to_x_and_y(seqs)
         onehots = np.eye(master_vocab.master_vocab_size)[y]
         all_logits = srn.calc_logits(seqs)
         all_probs = softmax(all_logits, axis=1)
@@ -65,7 +64,7 @@ def calc_pps(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps, spli
             predictions = probs.sum(axis=1)  # sum() explains why initial pp differ between categories
             targets = np.array([1 if stimulus_category in master_vocab.master_vocab_list[yi] else 0 for yi in y])
             pp_cat = calc_cross_entropy(predictions, targets)
-            name2cat2pps[name][stimulus_category].append(pp_cat)
+            name2cat2pps[seq_name][stimulus_category].append(pp_cat)
             #
             if config.General.cat_pp_verbose:
                 print('Evaluating using stimulus category="{}"'.format(stimulus_category))
@@ -85,7 +84,7 @@ def calc_pps(srn, master_vocab, seqs_data, name2cat2pps, name2cat2type_pps, spli
                 continue
             predictions = softmax(logits, axis=1)
             pp_type = calc_cross_entropy(predictions, targets)
-            name2cat2type_pps[name][stimulus_category].append(pp_type)
+            name2cat2type_pps[seq_name][stimulus_category].append(pp_type)
             #
             if config.General.type_pp_verbose:
                 print('Evaluating using stimulus category="{}"'.format(stimulus_category))
