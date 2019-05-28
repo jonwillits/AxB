@@ -36,6 +36,7 @@ class RNN:
         if num_seqs_in_batch is None:
             num_seqs_in_batch = self.params.num_seqs_in_batch
         all_windows = [self.to_windows(seq) for seq in seqs]
+        print('num_total windows={}'.format(len(all_windows)))
         if len(all_windows) % num_seqs_in_batch != 0:
             raise RuntimeError('Set number of sequences in batch to factor of number of sequences {}.'.format(
                 len(seqs)))
