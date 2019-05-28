@@ -26,8 +26,8 @@ class RNN:
     bptt = 3  # if larger than length of seq, pad_id is used to buffer left side of windows
     num_seqs_in_batch = 1
     shuffle_seqs = True
-    hidden_size = 4
+    hidden_size = 2
     num_epochs = 100
     learning_rate = 0.25
-    init_range = 0.01
+    init_range = 0.001
     optimization = 'adagrad'

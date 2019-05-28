@@ -43,10 +43,12 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_grid_mat(mat, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel,
+def plot_grid_mat(dist2grid_mat, dist, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel,
                   figsize=(8, 8), dpi=None, fontsize=14):
+
+    mat = dist2grid_mat[dist]
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    plt.title('"B" Type Perplexity at epoch={}'.format(max_num_epochs), fontsize=fontsize)
+    plt.title('"B" Type Perplexity at distance={}\nepoch={}'.format(dist, max_num_epochs), fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
     ax.set_xlabel(xlabel, fontsize=fontsize)
     # heatmap
@@ -57,7 +59,7 @@ def plot_grid_mat(mat, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabe
                    interpolation='nearest')
     # label each element
     text_colors = ['black', 'white']
-    threshold = im.norm(np.max(mat) / 2)  # threshold below which label is white (instead of black)
+    threshold = im.norm(np.max(mat) / 1)  # threshold below which label is white (instead of black)
     valfmt = ticker.StrMethodFormatter("{x:.4f}")
     for i in range(mat.shape[0]):
         for j in range(mat.shape[1]):
