@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as ticker
+import matplotlib.gridspec as gridspec
 
 
 def plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names, max_cat_pp):
@@ -43,46 +44,51 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_grid_mat(dist2grid_mat, dist, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel,
-                  figsize=(8, 8), dpi=None, fontsize=14):
-
-    mat = dist2grid_mat[dist]
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    plt.title('"B" Type Perplexity at distance={}\nepoch={}'.format(dist, max_num_epochs), fontsize=fontsize)
-    ax.set_ylabel(ylabel, fontsize=fontsize)
-    ax.set_xlabel(xlabel, fontsize=fontsize)
-    # heatmap
-    print('Plotting heatmap...')
-    im = ax.imshow(mat,
-                   aspect='auto',
-                   cmap='gray',
-                   interpolation='nearest')
-    # label each element
-    text_colors = ['black', 'white']
-    threshold = im.norm(np.max(mat) / 1)  # threshold below which label is white (instead of black)
-    valfmt = ticker.StrMethodFormatter("{x:.4f}")
-    for i in range(mat.shape[0]):
-        for j in range(mat.shape[1]):
-            is_below = im.norm(mat[i, j]) < threshold
-            color = text_colors[int(is_below)]
-            im.axes.text(j, i, valfmt(mat[i, j], None),
-                         fontsize=fontsize+2,
-                         horizontalalignment="center",
-                         verticalalignment="center",
-                         color=color)
-
-
-    # xticks
-    num_cols = len(mat.T)
-    ax.set_xticks(np.arange(num_cols))
-    ax.xaxis.set_ticklabels(xtick_labels, rotation=90, fontsize=fontsize)
-    # yticks
-    num_rows = len(mat)
-    ax.set_yticks(np.arange(num_rows))
-    ax.yaxis.set_ticklabels(ytick_labels,  # no need to reverse (because no extent is set)
-                            rotation=0, fontsize=fontsize)
-    # remove ticklines
-    lines = (ax.xaxis.get_ticklines() +
-             ax.yaxis.get_ticklines())
-    plt.setp(lines, visible=False)
+def plot_grid_mat(dist2grid_mat, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel,
+                  figsize=(16, 8), dpi=None, fontsize=14):
+    distances = dist2grid_mat.keys()
+    num_distances = len(distances)
+    fig = plt.figure(1)
+    gs1 = gridspec.GridSpec(1, num_distances)
+    axarr = [fig.add_subplot(ss) for ss in gs1]
+    for ax, dist in zip(axarr, distances):
+        ax.set_title('distance={}'.format(dist), fontsize=fontsize)
+        ax.set_ylabel(ylabel, fontsize=fontsize)
+        ax.set_xlabel(xlabel, fontsize=fontsize)
+        # heatmap
+        print('Plotting heatmap...')
+        mat = dist2grid_mat[dist]
+        im = ax.imshow(mat,
+                       aspect='auto',
+                       cmap='gray',
+                       interpolation='nearest')
+        # label each element
+        text_colors = ['black', 'white']
+        threshold = im.norm(np.max(mat) / 1)  # threshold below which label is white (instead of black)
+        valfmt = ticker.StrMethodFormatter("{x:.4f}")
+        for i in range(mat.shape[0]):
+            for j in range(mat.shape[1]):
+                is_below = im.norm(mat[i, j]) < threshold
+                color = text_colors[int(is_below)]
+                im.axes.text(j, i, valfmt(mat[i, j], None),
+                             fontsize=fontsize+2,
+                             horizontalalignment="center",
+                             verticalalignment="center",
+                             color=color)
+        # xticks
+        num_cols = len(mat.T)
+        ax.set_xticks(np.arange(num_cols))
+        ax.xaxis.set_ticklabels(xtick_labels, rotation=90, fontsize=fontsize)
+        # yticks
+        num_rows = len(mat)
+        ax.set_yticks(np.arange(num_rows))
+        ax.yaxis.set_ticklabels(ytick_labels,  # no need to reverse (because no extent is set)
+                                rotation=0, fontsize=fontsize)
+        # remove ticklines
+        lines = (ax.xaxis.get_ticklines() +
+                 ax.yaxis.get_ticklines())
+        plt.setp(lines, visible=False)
+    #
+    fig.suptitle('Type Perplexity for "B"\nepoch={}'.format(max_num_epochs), fontsize=fontsize)
+    gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
     plt.show()

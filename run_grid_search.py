@@ -54,5 +54,4 @@ for i, param1 in enumerate(PARAMS1):
                 dist2grid_mat[dist][i, j] += dist2type_pp_at_end[dist] / config.General.num_reps
 
 # plot  # TODO combine distances into one figure
-for dist in distances:
-    plot_grid_mat(dist2grid_mat, dist, MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+plot_grid_mat(dist2grid_mat, MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
