@@ -3,13 +3,14 @@
 class General:
     num_reps = 1
     cat_pp_verbose = False
-    type_pp_verbose = True
+    type_pp_verbose = False
+    seqs_pp_verbose = False
 
 
 class Input:
     # the basic parameters of the AxB grammar
     num_ab_types = 2
-    num_x_train_types = 4
+    num_x_train_types = 2
     num_x_test_types = 4
     min_distance = 1
     max_distance = 2

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as ticker
 import matplotlib.gridspec as gridspec
+from itertools import product
 
 
 def plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names, max_cat_pp):
@@ -44,20 +45,18 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_grid_mat(dist2grid_mat, max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel,
-                  figsize=(16, 8), dpi=None, fontsize=14):
-    distances = dist2grid_mat.keys()
-    num_distances = len(distances)
-    fig = plt.figure(1)
-    gs1 = gridspec.GridSpec(1, num_distances)
+def plot_grid_mat(name2dist2grid_mat, seq_names, distances,
+                  max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
+    fig = plt.figure(1, figsize=(len(seq_names) * 6, len(distances) * 6))
+    gs1 = gridspec.GridSpec(len(seq_names), len(distances))
     axarr = [fig.add_subplot(ss) for ss in gs1]
-    for ax, dist in zip(axarr, distances):
-        ax.set_title('distance={}'.format(dist), fontsize=fontsize)
+    for ax, (seq_name, dist) in zip(axarr, product(seq_names, distances)):
+        ax.set_title('sequence_name="{}" distance={}'.format(seq_name, dist), fontsize=fontsize)
         ax.set_ylabel(ylabel, fontsize=fontsize)
         ax.set_xlabel(xlabel, fontsize=fontsize)
         # heatmap
         print('Plotting heatmap...')
-        mat = dist2grid_mat[dist]
+        mat = name2dist2grid_mat[seq_name][dist]
         im = ax.imshow(mat,
                        aspect='auto',
                        cmap='gray',
@@ -71,14 +70,14 @@ def plot_grid_mat(dist2grid_mat, max_num_epochs, ytick_labels, xtick_labels, yla
                 is_below = im.norm(mat[i, j]) < threshold
                 color = text_colors[int(is_below)]
                 im.axes.text(j, i, valfmt(mat[i, j], None),
-                             fontsize=fontsize+2,
+                             fontsize=fontsize,
                              horizontalalignment="center",
                              verticalalignment="center",
                              color=color)
         # xticks
         num_cols = len(mat.T)
         ax.set_xticks(np.arange(num_cols))
-        ax.xaxis.set_ticklabels(xtick_labels, rotation=90, fontsize=fontsize)
+        ax.xaxis.set_ticklabels(xtick_labels, rotation=95, fontsize=fontsize)
         # yticks
         num_rows = len(mat)
         ax.set_yticks(np.arange(num_rows))

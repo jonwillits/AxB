@@ -1,6 +1,6 @@
 from copy import copy
 
-from src.evaluation import make_dist2type_pp_at_end
+from src.evaluation import make_name2dist2type_pp_at_end
 from src.plotting import plot_cat_and_type_pps
 from src.utils import print_params
 from src.utils import calc_max_cat_pp
@@ -33,4 +33,4 @@ max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vo
 plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
 
 
-make_dist2type_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2type_pps)
+make_name2dist2type_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2type_pps)
