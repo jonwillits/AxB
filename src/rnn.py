@@ -1,8 +1,6 @@
 import torch
-import time
 import numpy as np
 from cytoolz import itertoolz
-from src import config
 
 
 class RNN:

@@ -13,9 +13,9 @@ from src.rnn import RNN
 from src import config
 
 PARAMS1_NAME = 'learning_rate'
-PARAMS1 = [0.01, 0.05, 0.1, 0.5, 1.0]
+PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
-PARAMS2 = [2, 4,  6, 8]
+PARAMS2 = [2, 4, 6, 8]
 
 MAX_NUM_EPOCHS = 100
 
@@ -58,4 +58,6 @@ for i, param1 in enumerate(PARAMS1):
                     name2dist2type_pp_at_end[seq_name][dist] / config.General.num_reps
 
 # plot
-plot_grid_mat(name2dist2grid_mat, seq_names, distances, MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+plot_seq_names = ['train', 'test']
+plot_grid_mat(name2dist2grid_mat, plot_seq_names,
+              distances, MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)

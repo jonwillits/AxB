@@ -7,7 +7,7 @@ from src import config
 def make_name2dist2type_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2type_pps):
     # calculate theoretical maximum and minimum perplexity
     # "B" type perplexity should converge on 1.0, even with variable size distance
-    seq_names = ['train', 'test', 'novel']
+    seq_names = name2seqs.keys()
     res = {name: {} for name in seq_names}
     for seq_name in seq_names:
         distances = np.arange(input_params.min_distance, input_params.max_distance + 1)

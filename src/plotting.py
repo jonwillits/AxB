@@ -5,6 +5,8 @@ import matplotlib.ticker as ticker
 import matplotlib.gridspec as gridspec
 from itertools import product
 
+from src import config
+
 
 def plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names, max_cat_pp):
     for name in seq_names:
@@ -63,7 +65,7 @@ def plot_grid_mat(name2dist2grid_mat, seq_names, distances,
                        interpolation='nearest')
         # label each element
         text_colors = ['black', 'white']
-        threshold = im.norm(np.max(mat) / 1)  # threshold below which label is white (instead of black)
+        threshold = im.norm(np.max(mat) - 0.01)  # threshold below which label is white (instead of black)
         valfmt = ticker.StrMethodFormatter("{x:.4f}")
         for i in range(mat.shape[0]):
             for j in range(mat.shape[1]):
@@ -88,6 +90,7 @@ def plot_grid_mat(name2dist2grid_mat, seq_names, distances,
                  ax.yaxis.get_ticklines())
         plt.setp(lines, visible=False)
     #
-    fig.suptitle('Type Perplexity for "B"\nepoch={}'.format(max_num_epochs), fontsize=fontsize)
+    fig.suptitle('Type-Perplexity for "B"\nepoch={}\nn={}'.format(
+        max_num_epochs, config.General.num_reps), fontsize=fontsize)
     gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
     plt.show()
