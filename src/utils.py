@@ -35,3 +35,11 @@ def print_params(params):
     for k, v in sorted(params.__dict__.items()):
         if not k.startswith('__'):
             print('{}={}'.format(k, v))
+
+
+def to_string(params):
+    res = ''
+    for k, v in sorted(params.__dict__.items()):
+        if not k.startswith('__'):
+            res += '{}={}\n'.format(k, v)
+    return res

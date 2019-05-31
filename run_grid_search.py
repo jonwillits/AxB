@@ -1,10 +1,12 @@
 from copy import copy
 import numpy as np
 from itertools import product
+import datetime
 
 from src.evaluation import make_name2dist2type_pp_at_end
 from src.utils import print_params
 from src.plotting import plot_grid_search_results
+from src.plotting import plot_params
 from src.jobs import train_loop
 from src.jobs import make_name2seqs
 from src.corpus import AxbCorpus
@@ -16,8 +18,9 @@ PARAMS1_NAME = 'learning_rate'
 PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
-DISTANCES = [[3, 3]]
+DISTANCES = [[1, 1], [1, 2], [1, 3]]
 MAX_NUM_EPOCHS = 100
+PLOT_SEQ_NAMES = ['train', 'test']
 
 config.General.type_pp_verbose = False
 
@@ -64,6 +67,7 @@ for min_d, max_d in DISTANCES:
                         name2dist2type_pp_at_end[seq_name][dist] / config.General.num_reps
 
     # plot
-    plot_seq_names = ['train', 'test']
-    plot_grid_search_results(name2dist2grid_mat, plot_seq_names,
-                             distances, MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+    time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
+    plot_grid_search_results(time_stamp, name2dist2grid_mat, PLOT_SEQ_NAMES,
+                             MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+    plot_params(time_stamp, input_params, rnn_params)

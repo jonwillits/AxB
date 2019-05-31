@@ -6,6 +6,7 @@ import matplotlib.gridspec as gridspec
 from itertools import product
 
 from src import config
+from src.utils import to_string
 
 
 def plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names, max_cat_pp):
@@ -47,10 +48,18 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_grid_search_results(name2dist2grid_mat, seq_names, distances,
+def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
                              max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
-    fig = plt.figure(1, figsize=(len(seq_names) * 6, len(distances) * 6))
-    gs1 = gridspec.GridSpec(len(seq_names), len(distances))
+    if len(seq_names) == 2:
+        height = 12
+    elif len(seq_names) == 3:
+        height = 18
+    else:
+        raise AttributeError('Invalid number of seq_names')
+    distances = [1, 2, 3]
+    # fig
+    fig = plt.figure(1, figsize=(26, height))
+    gs1 = gridspec.GridSpec(len(seq_names), 3)
     axarr = [fig.add_subplot(ss) for ss in gs1]
     for ax, (seq_name, dist) in zip(axarr, product(seq_names, distances)):
         ax.set_title('sequence_name="{}" distance={}'.format(seq_name, dist), fontsize=fontsize)
@@ -58,24 +67,28 @@ def plot_grid_search_results(name2dist2grid_mat, seq_names, distances,
         ax.set_xlabel(xlabel, fontsize=fontsize)
         # heatmap
         print('Plotting heatmap...')
-        mat = name2dist2grid_mat[seq_name][dist]
-        im = ax.imshow(mat,
-                       aspect='auto',
-                       cmap='gray',
-                       interpolation='nearest')
-        # label each element
-        text_colors = ['black', 'white']
-        threshold = im.norm(np.max(mat) - 0.01)  # threshold below which label is white (instead of black)
-        valfmt = ticker.StrMethodFormatter("{x:.4f}")
-        for i in range(mat.shape[0]):
-            for j in range(mat.shape[1]):
-                is_below = im.norm(mat[i, j]) < threshold
-                color = text_colors[int(is_below)]
-                im.axes.text(j, i, valfmt(mat[i, j], None),
-                             fontsize=fontsize,
-                             horizontalalignment="center",
-                             verticalalignment="center",
-                             color=color)
+        try:
+            mat = name2dist2grid_mat[seq_name][dist]
+        except KeyError:
+            ax.set_axis_off()
+        else:
+            im = ax.imshow(mat,
+                           aspect='auto',
+                           cmap='gray',
+                           interpolation='nearest')
+            # label each element
+            text_colors = ['black', 'white']
+            threshold = im.norm(np.max(mat) - 0.01)  # threshold below which label is white (instead of black)
+            valfmt = ticker.StrMethodFormatter("{x:.4f}")
+            for i in range(mat.shape[0]):
+                for j in range(mat.shape[1]):
+                    is_below = im.norm(mat[i, j]) < threshold
+                    color = text_colors[int(is_below)]
+                    im.axes.text(j, i, valfmt(mat[i, j], None),
+                                 fontsize=fontsize,
+                                 horizontalalignment="center",
+                                 verticalalignment="center",
+                                 color=color)
         # xticks
         num_cols = len(mat.T)
         ax.set_xticks(np.arange(num_cols))
@@ -90,7 +103,21 @@ def plot_grid_search_results(name2dist2grid_mat, seq_names, distances,
                  ax.yaxis.get_ticklines())
         plt.setp(lines, visible=False)
     #
-    fig.suptitle('Type-Perplexity for "B"\nepoch={}\nn={}'.format(
-        max_num_epochs, config.General.num_reps), fontsize=fontsize)
+    fig.suptitle('Type-Perplexity for "B"\nepoch={}\nn={}\n{}'.format(
+        max_num_epochs, config.General.num_reps, time_stamp), fontsize=fontsize)
     gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
+    plt.show()
+
+
+def plot_params(time_stamp, input_params, rnn_params, fontsize=14):
+    fig = plt.figure(1, figsize=(8, 4), dpi=None)
+    # ax1
+    ax1 = fig.add_axes([0.1, 0.1, 0.3, 0.0])
+    ax1.set_title(to_string(input_params), fontsize=fontsize)
+    ax1.set_axis_off()
+    # ax2
+    ax2 = fig.add_axes([0.6, 0.1, 0.3, 0.0])
+    ax2.set_title(to_string(rnn_params), fontsize=fontsize)
+    ax2.set_axis_off()
+    plt.suptitle('{}'.format(time_stamp), fontsize=fontsize)
     plt.show()
