@@ -10,9 +10,11 @@ def make_name2dist2type_pp_at_end(srn, input_params, master_vocab, name2seqs, na
     seq_names = name2seqs.keys()
     res = {name: {} for name in seq_names}
     for seq_name in seq_names:
-        distances = np.arange(input_params.min_distance, input_params.max_distance + 1)
+        distances = np.arange(1, config.Eval.max_distance + 1)
         for dist in distances:
             filtered_seqs = [seq for seq in name2seqs[seq_name] if len(seq) == 3 + dist]
+            if not filtered_seqs:
+                continue
             x, y = srn.to_x_and_y(filtered_seqs)
             num_windows = len(y)
             num_b_windows = np.sum([1 if master_vocab.types[yi].startswith('B') else 0 for yi in y])
@@ -36,13 +38,17 @@ def make_name2dist2type_pp_at_end(srn, input_params, master_vocab, name2seqs, na
     return res
 
 
-def calc_pps(srn, master_vocab, name2seqs, distances, name2dist2cat_pps, name2dist2type_pps, split_indices):
-
-    assert '.' in master_vocab.types  # else distance will not be correct
+def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps, split_indices):
     seq_names = name2dist2cat_pps.keys()
     for seq_name in seq_names:
-        for dist in distances:
+        for dist in range(1, config.Eval.max_distance + 1):
+
+            # remove sequences not matching distance
+            assert '.' in master_vocab.types  # else distance will not be correct
             filtered_seqs = [seq for seq in name2seqs[seq_name] if len(seq) == 3 + dist]
+            if not filtered_seqs:
+                continue
+
             if config.Verbosity.cat_pp or config.Verbosity.type_pp:
                 print('Evaluating at distance={}'.format(dist))
                 print('Total number of sequences={} reduced to {}'.format(

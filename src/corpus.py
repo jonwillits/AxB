@@ -1,11 +1,15 @@
 import random
 
+from src import config
+
 
 class AxbCorpus:
 
-    def __init__(self, params, num_x_types):
+    def __init__(self, params, test):
         self.params = params
-        self.num_x_types = num_x_types
+        self.num_x_types = params.num_x_test_types if test else params.num_x_train_types
+        self.max_distance = config.Eval.max_distance if test else params.max_distance
+        print(test, self.max_distance)
 
         self.num_tokens = 0
         self.sequence_population = []
@@ -100,7 +104,7 @@ class AxbCorpus:
         return new_sequences
 
     def generate_sequence_population(self):
-        max_distance = self.params.max_distance
+        max_distance = self.max_distance
         min_distance = self.params.min_distance
 
         for i in range(self.params.num_ab_types):

@@ -7,6 +7,11 @@ class Verbosity:
     seqs_pp = False
 
 
+class Eval:
+    max_distance = 3  # for 'test' sequences
+    skip_novel = True
+
+
 class Input:
     # the basic parameters of the AxB grammar
     num_ab_types = 2

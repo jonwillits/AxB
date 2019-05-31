@@ -56,10 +56,10 @@ def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
         height = 18
     else:
         raise AttributeError('Invalid number of seq_names')
-    distances = [1, 2, 3]
+    distances = np.arange(1, config.Eval.max_distance + 1)
     # fig
     fig = plt.figure(1, figsize=(26, height))
-    gs1 = gridspec.GridSpec(len(seq_names), 3)
+    gs1 = gridspec.GridSpec(len(seq_names), config.Eval.max_distance)
     axarr = [fig.add_subplot(ss) for ss in gs1]
     for ax, (seq_name, dist) in zip(axarr, product(seq_names, distances)):
         ax.set_title('sequence_name="{}" distance={}'.format(seq_name, dist), fontsize=fontsize)
@@ -67,9 +67,8 @@ def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
         ax.set_xlabel(xlabel, fontsize=fontsize)
         # heatmap
         print('Plotting heatmap...')
-        try:
-            mat = name2dist2grid_mat[seq_name][dist]
-        except KeyError:
+        mat = name2dist2grid_mat[seq_name][dist]
+        if np.count_nonzero(mat) == 0:
             ax.set_axis_off()
         else:
             im = ax.imshow(mat,
