@@ -43,7 +43,7 @@ def calc_pps(srn, master_vocab, name2seqs, distances, name2dist2cat_pps, name2di
     for seq_name in seq_names:
         for dist in distances:
             filtered_seqs = [seq for seq in name2seqs[seq_name] if len(seq) == 3 + dist]
-            if config.Verbosity.cat_pp_verbose or config.Verbosity.type_pp_verbose:
+            if config.Verbosity.cat_pp or config.Verbosity.type_pp:
                 print('Evaluating at distance={}'.format(dist))
                 print('Total number of sequences={} reduced to {}'.format(
                     len(name2seqs[seq_name]), len(filtered_seqs)))
@@ -64,7 +64,7 @@ def calc_pps(srn, master_vocab, name2seqs, distances, name2dist2cat_pps, name2di
             pp_cat = np.exp(calc_cross_entropy(predictions, targets))
             name2dist2cat_pps[seq_name][dist].append(pp_cat)
             #
-            if config.Verbosity.cat_pp_verbose:
+            if config.Verbosity.cat_pp:
                 print(b_probs.round(2))
                 print(predictions.round(2))
                 print(targets)
@@ -78,14 +78,14 @@ def calc_pps(srn, master_vocab, name2seqs, distances, name2dist2cat_pps, name2di
             pp_type = np.exp(calc_cross_entropy(predictions, targets))
             name2dist2type_pps[seq_name][dist].append(pp_type)
             #
-            if config.Verbosity.type_pp_verbose:
+            if config.Verbosity.type_pp:
                 print(b_logits.round(2))
                 print(predictions.round(2))
                 print(targets)
                 print(targets * np.log(predictions + 1e-9).round(2))
                 print(pp_type)
                 print()
-    if config.Verbosity.cat_pp_verbose or config.Verbosity.type_pp_verbose:
+    if config.Verbosity.cat_pp or config.Verbosity.type_pp:
         print('------------------------------------------------------------')
 
 

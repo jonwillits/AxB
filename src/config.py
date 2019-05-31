@@ -2,9 +2,9 @@
 
 class Verbosity:
     summary = False
-    cat_pp_verbose = False
-    type_pp_verbose = False
-    seqs_pp_verbose = False
+    cat_pp = False
+    type_pp = False
+    seqs_pp = False
 
 
 class Input:
