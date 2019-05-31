@@ -28,11 +28,11 @@ for hidden_size in [3, 4, 5, 6, 7, 8]:
     print_params(rnn_params)
 
     # train
-    srn = RNN(master_vocab.master_vocab_size, rnn_params)
+    srn = RNN(master_vocab.num_types, rnn_params)
     name2dist2cat_pps, name2dist2type_pps = train_loop(srn, input_params, name2seqs, master_vocab)
 
     # plot type perplexity (to verify training was successful)
-    max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.master_vocab_size)
+    max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_types)
     plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
 
     # store weights in dict where the key is the name of the weight matrix

@@ -23,7 +23,7 @@ PARAMS2 = [2, 4, 6, 8]
 TRAIN_DISTANCES = [[1, 1], [1, 2], [1, 3]]
 MAX_NUM_EPOCHS = 100
 PLOT_SEQ_NAMES = ['train', 'test']
-NUM_REPS = 1
+NUM_REPS = 10
 PROGRESS_BAR = True
 
 config.Verbosity.type_pp = False
@@ -32,6 +32,10 @@ config.Verbosity.type_pp = False
 # params
 input_params = config.Input  # cannot be copied
 rnn_params = config.RNN  # cannot be copied
+
+# set bptt such that it is possible to learn dependencies across largest distance
+setattr(rnn_params, 'bptt', config.Eval.max_distance + 1)
+print('Set bptt to {}'.format(rnn_params.bptt))
 
 # do for each distance setting
 for min_d, max_d in TRAIN_DISTANCES:
@@ -62,24 +66,25 @@ for min_d, max_d in TRAIN_DISTANCES:
     for i, param1 in enumerate(PARAMS1):
         for j, param2 in enumerate(PARAMS2):
 
-            # overwrite params
+            # overwrite rnn_params
             setattr(rnn_params, PARAMS1_NAME, param1)
             setattr(rnn_params, PARAMS2_NAME, param2)
             setattr(rnn_params, 'num_epochs', MAX_NUM_EPOCHS)
-            setattr(rnn_params, 'bptt', max_d + 1)
+
             if not PROGRESS_BAR:
                 print_params(rnn_params)
 
-            # train multiple models for each cell in grid search
+            # each cell in grid is average over multiple models
             for _ in range(NUM_REPS):
-                # train
-                srn = RNN(master_vocab.master_vocab_size, rnn_params)
-                name2dist2cat_pps, name2dist2type_pps = train_loop(srn, input_params, name2seqs, master_vocab)
+
+                # train + evaluate
+                rnn = RNN(master_vocab.num_types, rnn_params)
+                name2dist2cat_pps, name2dist2type_pps = train_loop(rnn, input_params, name2seqs, master_vocab)
 
                 # check type-perplexity against theory
                 if not PROGRESS_BAR:
                     check_type_pp_at_end(
-                        srn, input_params, master_vocab, name2seqs, name2dist2type_pps)
+                        rnn, input_params, master_vocab, name2seqs, name2dist2type_pps)
 
                 # populate grid_mat
                 for seq_name, dist2type_pps in name2dist2type_pps.items():

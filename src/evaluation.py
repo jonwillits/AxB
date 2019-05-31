@@ -34,14 +34,14 @@ def check_type_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2t
             print('b_type_pp_at_end  ={}'.format(b_type_pp_at_end))
 
 
-def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps, split_indices):
+def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps,):
     seq_names = name2dist2cat_pps.keys()
     for seq_name in seq_names:
         for dist in range(1, config.Eval.max_distance + 1):
 
             # remove sequences not matching distance
-            assert '.' in master_vocab.types  # else distance will not be correct
-            filtered_seqs = [seq for seq in name2seqs[seq_name] if len(seq) == 3 + dist]
+            punct = '.' in master_vocab.types
+            filtered_seqs = [seq for seq in name2seqs[seq_name] if len(seq) == 2 + int(punct) + dist]
             if not filtered_seqs:
                 continue
 
@@ -52,13 +52,17 @@ def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps
 
             # logits and softmax probabilities
             x, y = srn.to_x_and_y(filtered_seqs)
-            onehots = np.eye(master_vocab.master_vocab_size)[y]
+            one_hots = np.eye(master_vocab.num_types)[y]
             all_logits = srn.calc_logits(filtered_seqs)
             all_probs = softmax(all_logits, axis=1)
-            # split by category
-            punct_probs, a_probs, b_probs, x_probs = np.split(all_probs, split_indices, axis=1)[:-1]
-            punct_logits, a_logits, b_logits, x_logits = np.split(all_logits, split_indices, axis=1)[:-1]
-            punct_onehot, a_onehot, b_onehot, x_onehot = np.split(onehots, split_indices, axis=1)[:-1]
+
+            # TODO make b_probs be in first position always
+
+            # get values for type B only
+            num_b = len([t for t in master_vocab.types if t.startswith('B')])
+            b_probs = all_probs[:, :num_b]
+            b_logits = all_logits[:, :num_b]
+            b_onehot =  one_hots[:, :num_b]
 
             # perplexity for category
             predictions = b_probs.sum(axis=1)  # sum() explains why initial pp differ between categories

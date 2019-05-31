@@ -12,50 +12,46 @@ class AxbCorpus:
         print('Initializing {} corpus with max_distance={}'.format(
             'test' if test else 'train', self.max_distance))
 
-        self.num_tokens = 0
         self.sequence_population = []
         self.sequence_sample = []
-        self.vocab_list = []
-        self.vocab_index_dict = {}
-        self.vocab_freq_dict = {}
+        self.types = []
+        self.type2id = {}
         self.num_sequences = None
         self.axb_pair_list = []
         self.a_list = []
         self.b_list = []
         self.x_list = []
-        self.stimulus_category_dict = {}
-        self.category_item_lists_dict = {'A': [], 'B': [], 'x': [], '.': ['.']}
-        if self.params.punct:
-            self.vocab_list.append('.')
-            self.vocab_index_dict['.'] = 0
-            self.vocab_freq_dict['.'] = 0
+        self.type2cat = {}
+        self.cat2types = {'A': [], 'B': [], 'x': [], '.': ['.']}
         #
         self.generate_vocab()
         self.generate_sequence_population()
         self.generate_sequence_sample()
+        #
+        if self.params.punct:
+            self.types.append('.')
+            self.type2id['.'] = len(self.types)
 
     def generate_vocab(self):
 
-        vocab_counter = 1
+        vocab_counter = 0
+
+        for i in range(self.params.num_ab_types):  # B must come first because b_probs are assumed to be first in output
+            b = "B" + str(i + 1)
+            self.b_list.append(b)
+            self.types.append(b)
+            self.type2id[b] = vocab_counter
+            self.type2cat[b] = 'B'
+            self.cat2types['B'].append(b)
+            vocab_counter += 1
 
         for i in range(self.params.num_ab_types):
             a = "A" + str(i+1)
             self.a_list.append(a)
-            self.vocab_list.append(a)
-            self.vocab_index_dict[a] = vocab_counter
-            self.vocab_freq_dict[a] = 0
-            self.stimulus_category_dict[a] = 'A'
-            self.category_item_lists_dict['A'].append(a)
-            vocab_counter += 1
-
-        for i in range(self.params.num_ab_types):
-            b = "B" + str(i + 1)
-            self.b_list.append(b)
-            self.vocab_list.append(b)
-            self.vocab_index_dict[b] = vocab_counter
-            self.vocab_freq_dict[b] = 0
-            self.stimulus_category_dict[b] = 'B'
-            self.category_item_lists_dict['B'].append(b)
+            self.types.append(a)
+            self.type2id[a] = vocab_counter
+            self.type2cat[a] = 'A'
+            self.cat2types['A'].append(a)
             vocab_counter += 1
 
         for i in range(self.params.num_ab_types):
@@ -66,11 +62,10 @@ class AxbCorpus:
         for i in range(self.num_x_types):
             x = "x" + str(i + 1)
             self.x_list.append(x)
-            self.vocab_list.append(x)
-            self.vocab_index_dict[x] = vocab_counter
-            self.stimulus_category_dict[x] = 'x'
-            self.category_item_lists_dict['x'].append(x)
-            self.vocab_freq_dict[x] = 0
+            self.types.append(x)
+            self.type2id[x] = vocab_counter
+            self.type2cat[x] = 'x'
+            self.cat2types['x'].append(x)
             vocab_counter += 1
 
     def add_x(self, old_sequences, replace):

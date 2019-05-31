@@ -24,12 +24,12 @@ master_vocab = Vocab(train_corpus, test_corpus)
 name2seqs = make_name2seqs(master_vocab, train_corpus, test_corpus)
 
 # train
-srn = RNN(master_vocab.master_vocab_size, rnn_params)
+srn = RNN(master_vocab.num_types, rnn_params)
 name2dist2cat_pps, name2dist2type_pps = train_loop(
     srn, input_params, name2seqs, master_vocab)
 
 # plot
-max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.master_vocab_size)
+max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_types)
 plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
 
 

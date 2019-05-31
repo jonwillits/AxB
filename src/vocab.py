@@ -2,26 +2,26 @@
 class Vocab:
     def __init__(self, *corpus_list):
         self.corpus_list = [corpus for corpus in corpus_list]
-        self.type2id, self.types = self.generate_master_vocab()
-        self.master_vocab_size = len(self.types)
+        self.types = self.make_types()
+        self.num_types = len(self.types)
+        self.type2id = {t: n for n, t in enumerate(self.types)}
+        #
+        assert 'B1' == self.types[0]  # type-perplexity evaluation assumes B types come first in output
+        assert self.type2id['B1'] == 0
 
-    def generate_master_vocab(self):
-        types = []
-        type2id = {}
-        index_counter = 0
+    def make_types(self):
+        res = []
         for corpus in self.corpus_list:
-            for token in corpus.vocab_list:
-                if token not in type2id:
-                    type2id[token] = index_counter
-                    types.append(token)
-                    index_counter += 1
-        return type2id, types
+            for t in corpus.types:
+                if t not in res:
+                    res.append(t)
+        return res
 
     def generate_index_sequences(self, corpus):
-        index_sequence_list = []
+        res = []
         for sequence in corpus.sequence_sample:
             new_sequence = []
             for token in sequence:
                 new_sequence.append(self.type2id[token])
-            index_sequence_list.append(new_sequence)
-        return index_sequence_list
+            res.append(new_sequence)
+        return res

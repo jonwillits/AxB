@@ -29,10 +29,7 @@ def train_loop(srn, input_params, name2seqs, master_vocab):
     #
     for epoch in range(srn.params.num_epochs):
         # cat_pp + type_pp
-        assert input_params.punct  # required to calculate split_indices correctly
-        split_indices = np.cumsum([1, input_params.num_ab_types,
-                                   input_params.num_ab_types, input_params.num_x_test_types])
-        calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps, split_indices)
+        calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps)
         # train
         if config.Verbosity.seqs_pp:
             print('seqs_pp={}'.format(seqs_pp))
