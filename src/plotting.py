@@ -48,7 +48,7 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
+def plot_grid_search_results(time_stamp, name2dist2grid_mat, name2dist2start_pp, seq_names,
                              num_epochs, num_reps, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
     if len(seq_names) == 2:
         height = 12
@@ -66,18 +66,21 @@ def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
         ax.set_ylabel(ylabel, fontsize=fontsize)
         ax.set_xlabel(xlabel, fontsize=fontsize)
         # heatmap
-        print('Plotting heatmap...')
         mat = name2dist2grid_mat[seq_name][dist]
         if np.count_nonzero(mat) == 0:
             ax.set_axis_off()
         else:
+            vmax = name2dist2start_pp[seq_name][dist]
+            vmin = 1.0
             im = ax.imshow(mat,
                            aspect='auto',
                            cmap='gray',
-                           interpolation='nearest')
+                           interpolation='nearest',
+                           vmin=vmin, vmax=vmax)
             # label each element
             text_colors = ['black', 'white']
-            threshold = im.norm(np.max(mat) - 0.01)  # threshold below which label is white (instead of black)
+            half_range = (vmax - vmin) / 2
+            threshold = im.norm(half_range + vmin)  # threshold below which label is white (instead of black)
             valfmt = ticker.StrMethodFormatter("{x:.4f}")
             for i in range(mat.shape[0]):
                 for j in range(mat.shape[1]):
@@ -91,7 +94,7 @@ def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
         # xticks
         num_cols = len(mat.T)
         ax.set_xticks(np.arange(num_cols))
-        ax.xaxis.set_ticklabels(xtick_labels, rotation=95, fontsize=fontsize)
+        ax.xaxis.set_ticklabels(xtick_labels, rotation=0, fontsize=fontsize)
         # yticks
         num_rows = len(mat)
         ax.set_yticks(np.arange(num_rows))

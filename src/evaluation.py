@@ -4,11 +4,10 @@ from scipy.special import softmax
 from src import config
 
 
-def make_name2dist2type_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2type_pps):
+def check_type_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2type_pps):
     # calculate theoretical maximum and minimum perplexity
     # "B" type perplexity should converge on 1.0, even with variable size distance
     seq_names = name2seqs.keys()
-    res = {name: {} for name in seq_names}
     for seq_name in seq_names:
         distances = np.arange(1, config.Eval.max_distance + 1)
         for dist in distances:
@@ -23,19 +22,16 @@ def make_name2dist2type_pp_at_end(srn, input_params, master_vocab, name2seqs, na
             #
             b_type_pp_at_start = name2dist2type_pps[seq_name][dist][0]
             b_type_pp_at_end = name2dist2type_pps[seq_name][dist][-1]
-            res[seq_name][dist] = b_type_pp_at_end
             # console
-            if config.Verbosity.summary:
-                print('-------------')
-                print('distance={} seq_name={}'.format(dist, seq_name))
-                print('-------------')
-                print('num_b_windows', num_b_windows)
-                print('num_windows', num_windows)
-                print('max_b_type_pp', max_b_type_pp)
-                print('min_b_type_pp', min_b_type_pp)
-                print('b_type_pp_at_start={}'.format(b_type_pp_at_start))
-                print('b_type_pp_at_end  ={}'.format(b_type_pp_at_end))
-    return res
+            print('-------------')
+            print('distance={} seq_name={}'.format(dist, seq_name))
+            print('-------------')
+            print('num_b_windows', num_b_windows)
+            print('num_windows', num_windows)
+            print('max_b_type_pp', max_b_type_pp)
+            print('min_b_type_pp', min_b_type_pp)
+            print('b_type_pp_at_start={}'.format(b_type_pp_at_start))
+            print('b_type_pp_at_end  ={}'.format(b_type_pp_at_end))
 
 
 def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps, split_indices):

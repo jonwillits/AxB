@@ -9,7 +9,8 @@ class AxbCorpus:
         self.params = params
         self.num_x_types = params.num_x_test_types if test else params.num_x_train_types
         self.max_distance = config.Eval.max_distance if test else params.max_distance
-        print(test, self.max_distance)
+        print('Initializing {} corpus with max_distance={}'.format(
+            'test' if test else 'train', self.max_distance))
 
         self.num_tokens = 0
         self.sequence_population = []
