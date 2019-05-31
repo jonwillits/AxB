@@ -47,8 +47,8 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_grid_mat(name2dist2grid_mat, seq_names, distances,
-                  max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
+def plot_grid_search_results(name2dist2grid_mat, seq_names, distances,
+                             max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
     fig = plt.figure(1, figsize=(len(seq_names) * 6, len(distances) * 6))
     gs1 = gridspec.GridSpec(len(seq_names), len(distances))
     axarr = [fig.add_subplot(ss) for ss in gs1]

@@ -1,7 +1,7 @@
 
 
 class General:
-    num_reps = 100
+    num_reps = 1
     cat_pp_verbose = False
     type_pp_verbose = False
     seqs_pp_verbose = False
