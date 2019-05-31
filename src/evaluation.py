@@ -40,8 +40,8 @@ def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps
         for dist in range(1, config.Eval.max_distance + 1):
 
             # remove sequences not matching distance
-            punct = '.' in master_vocab.types
-            filtered_seqs = [seq for seq in name2seqs[seq_name] if len(seq) == 2 + int(punct) + dist]
+            punctuation = '.' in master_vocab.types
+            filtered_seqs = [seq for seq in name2seqs[seq_name] if len(seq) == 2 + int(punctuation) + dist]
             if not filtered_seqs:
                 continue
 

@@ -18,8 +18,8 @@ setattr(rnn_params, 'learning_rate', 0.25)
 
 
 # seqs_data
-train_corpus = AxbCorpus(input_params, num_x_types=input_params.num_x_train_types)
-test_corpus = AxbCorpus(input_params,  num_x_types=input_params.num_x_test_types)
+train_corpus = AxbCorpus(input_params, test=False)
+test_corpus = AxbCorpus(input_params,  test=True)
 master_vocab = Vocab(train_corpus, test_corpus)
 name2seqs = make_name2seqs(master_vocab, train_corpus, test_corpus)
 
@@ -28,8 +28,8 @@ for hidden_size in [3, 4, 5, 6, 7, 8]:
     print_params(rnn_params)
 
     # train
-    srn = RNN(master_vocab.num_types, rnn_params)
-    name2dist2cat_pps, name2dist2type_pps = train_loop(srn, input_params, name2seqs, master_vocab)
+    rnn = RNN(master_vocab.num_types, master_vocab.types.index('PAD'), rnn_params)
+    name2dist2cat_pps, name2dist2type_pps = train_loop(rnn, input_params, name2seqs, master_vocab)
 
     # plot type perplexity (to verify training was successful)
     max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_types)
@@ -37,7 +37,7 @@ for hidden_size in [3, 4, 5, 6, 7, 8]:
 
     # store weights in dict where the key is the name of the weight matrix
     name2array = {}
-    for name, param in srn.model.named_parameters():
+    for name, param in rnn.model.named_parameters():
         name2array[name] = param.detach().numpy()
 
     # inspect contents of dict

@@ -23,7 +23,7 @@ PARAMS2 = [2, 4, 6, 8]
 TRAIN_DISTANCES = [[1, 1], [1, 2], [1, 3]]
 MAX_NUM_EPOCHS = 100
 PLOT_SEQ_NAMES = ['train', 'test']
-NUM_REPS = 10
+NUM_REPS = 1
 PROGRESS_BAR = True
 
 config.Verbosity.type_pp = False
@@ -78,7 +78,7 @@ for min_d, max_d in TRAIN_DISTANCES:
             for _ in range(NUM_REPS):
 
                 # train + evaluate
-                rnn = RNN(master_vocab.num_types, rnn_params)
+                rnn = RNN(master_vocab.num_types, master_vocab.types.index('PAD'), rnn_params)
                 name2dist2cat_pps, name2dist2type_pps = train_loop(rnn, input_params, name2seqs, master_vocab)
 
                 # check type-perplexity against theory

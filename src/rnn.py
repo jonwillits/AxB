@@ -4,10 +4,11 @@ from cytoolz import itertoolz
 
 
 class RNN:
-    def __init__(self, input_size, params):
+    def __init__(self, input_size, pad_id, params):
         self.input_size = input_size
-        self.pad_id = 0
+        self.pad_id = pad_id
         self.params = params
+        print('Initializing RNN with pad_id={}'.format(pad_id))
         #
         self.model = TorchRNN(self.params.rnn_type, self.params.num_layers, self.input_size,
                               self.params.hidden_size, self.params.init_range, self.params.dropout_prob)

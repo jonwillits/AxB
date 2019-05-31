@@ -19,10 +19,8 @@ class Input:
     num_x_test_types = 4
     min_distance = 1
     max_distance = 2
-    punct = True
-    #
+    punctuation = False
     sample_size = None  # if None, full set is used, else sample from full set
-    num_sequences = 10
 
 
 class RNN:

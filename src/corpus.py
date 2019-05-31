@@ -28,7 +28,7 @@ class AxbCorpus:
         self.generate_sequence_population()
         self.generate_sequence_sample()
         #
-        if self.params.punct:
+        if self.params.punctuation:
             self.types.append('.')
             self.type2id['.'] = len(self.types)
 
@@ -75,7 +75,7 @@ class AxbCorpus:
             if len(i) > longest:
                 longest = len(i)
 
-        if self.params.punct:
+        if self.params.punctuation:
             insertion_position = -2
         else:
             insertion_position = -1
@@ -106,7 +106,7 @@ class AxbCorpus:
         for i in range(self.params.num_ab_types):
             new_sequence = [self.a_list[i], self.b_list[i]]
 
-            if self.params.punct:
+            if self.params.punctuation:
                 new_sequence.append('.')
             self.sequence_population.append(new_sequence)
 
