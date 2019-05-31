@@ -1,6 +1,6 @@
 from copy import copy
 
-from src.plotting import plot_cat_and_type_pps
+from src.plotting import plot_cat_and_item_pps
 from src.utils import print_params
 from src.utils import calc_max_cat_pp
 from src.jobs import train_loop
@@ -28,12 +28,12 @@ for hidden_size in [3, 4, 5, 6, 7, 8]:
     print_params(rnn_params)
 
     # train
-    rnn = RNN(master_vocab.num_types, master_vocab.types.index('PAD'), rnn_params)
-    name2dist2cat_pps, name2dist2type_pps = train_loop(rnn, input_params, name2seqs, master_vocab)
+    rnn = RNN(master_vocab, rnn_params)
+    name2dist2cat_pps, name2dist2item_pps = train_loop(rnn, name2seqs, master_vocab)
 
-    # plot type perplexity (to verify training was successful)
+    # plot item perplexity (to verify training was successful)
     max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_types)
-    plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
+    plot_cat_and_item_pps(name2dist2cat_pps, name2dist2item_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
 
     # store weights in dict where the key is the name of the weight matrix
     name2array = {}

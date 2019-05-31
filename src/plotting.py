@@ -9,11 +9,11 @@ from src import config
 from src.utils import to_string
 
 
-def plot_cat_and_type_pps(name2dist2cat_pps, name2dist2type_pps, seq_names, max_cat_pp):
+def plot_cat_and_item_pps(name2dist2cat_pps, name2dist2item_pps, seq_names, max_cat_pp):
     for name in seq_names:
         plot_pp_trajs(name2dist2cat_pps[name], name, 'Category', y_max=max_cat_pp)
     for name in seq_names:
-        plot_pp_trajs(name2dist2type_pps[name], name, 'Type', y_max=None)
+        plot_pp_trajs(name2dist2item_pps[name], name, 'Type', y_max=None)
 
 
 def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x_step=10, y_max=None):

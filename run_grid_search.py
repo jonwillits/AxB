@@ -5,7 +5,7 @@ import datetime
 import sys
 import pyprind
 
-from src.evaluation import check_type_pp_at_end
+from src.evaluation import check_item_pp_at_end
 from src.utils import print_params
 from src.plotting import plot_grid_search_results
 from src.plotting import plot_params
@@ -20,13 +20,14 @@ PARAMS1_NAME = 'learning_rate'
 PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
-TRAIN_DISTANCES = [[1, 1], [1, 2], [1, 3]]
+TRAIN_DISTANCES = [[1, 3]]
 MAX_NUM_EPOCHS = 100
 PLOT_SEQ_NAMES = ['train', 'test']
-NUM_REPS = 1
-PROGRESS_BAR = True
+NUM_REPS = 10
+PROGRESS_BAR = False
+LIMIT_BPPT = False  # if True, generalization to unseen distances is impossible
 
-config.Verbosity.type_pp = False
+config.Verbosity.item_pp = False
 
 
 # params
@@ -47,6 +48,10 @@ for min_d, max_d in TRAIN_DISTANCES:
     # set min and max distance before generating sequences
     setattr(input_params, 'min_distance', min_d)
     setattr(input_params, 'max_distance', max_d)
+
+    if LIMIT_BPPT:  # sets bptt to maxmal bptt needed to learn training dependencies only
+        setattr(rnn_params, 'bptt', max_d + 1)
+        print('Set bptt to {}'.format(rnn_params.bptt))
 
     # seqs_data
     train_corpus = AxbCorpus(input_params, test=False)
@@ -78,21 +83,21 @@ for min_d, max_d in TRAIN_DISTANCES:
             for _ in range(NUM_REPS):
 
                 # train + evaluate
-                rnn = RNN(master_vocab.num_types, master_vocab.types.index('PAD'), rnn_params)
-                name2dist2cat_pps, name2dist2type_pps = train_loop(rnn, input_params, name2seqs, master_vocab)
+                rnn = RNN(master_vocab, rnn_params)
+                name2dist2cat_pps, name2dist2item_pps = train_loop(rnn, name2seqs, master_vocab)
 
-                # check type-perplexity against theory
+                # check item-perplexity against theory
                 if not PROGRESS_BAR:
-                    check_type_pp_at_end(
-                        rnn, input_params, master_vocab, name2seqs, name2dist2type_pps)
+                    check_item_pp_at_end(
+                        rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
 
                 # populate grid_mat
-                for seq_name, dist2type_pps in name2dist2type_pps.items():
-                    for dist, type_pps in dist2type_pps.items():
-                        if not type_pps:
+                for seq_name, dist2item_pps in name2dist2item_pps.items():
+                    for dist, item_pps in dist2item_pps.items():
+                        if not item_pps:
                             continue
-                        name2dist2grid_mat[seq_name][dist][i, j] += type_pps[-1] / NUM_REPS
-                        name2dist2start_pp[seq_name][dist] = type_pps[0]
+                        name2dist2grid_mat[seq_name][dist][i, j] += item_pps[-1] / NUM_REPS
+                        name2dist2start_pp[seq_name][dist] = item_pps[0]
 
             if PROGRESS_BAR:
                 pbar.update()

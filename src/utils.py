@@ -9,7 +9,7 @@ def calc_min_seqs_pp(input_params, num_types):
 
 def calc_max_cat_pp(input_params, num_sequences, num_types):
     # max_cat_pp is is cat_pp for punctuation
-    # because the punctuation category only consists of 1 type and therefore has the least probability mass
+    # because the punctuation category only consists of 1 item and therefore has the least probability mass
     avg_window_size = int(input_params.punctuation) + 2 + np.mean([input_params.max_distance,
                                                                       input_params.min_distance])
     num_windows = avg_window_size * num_sequences
@@ -17,16 +17,16 @@ def calc_max_cat_pp(input_params, num_sequences, num_types):
     return max_cat_pp
 
 
-def calc_max_type_pp(input_params):
-    # max_type_pp is type_pp for the category which has largest set size
-    # because least amount of probability mass is initially devoted to the correct type
+def calc_max_item_pp(input_params):
+    # max_item_pp is item_pp for the category which has largest set size
+    # because least amount of probability mass is initially devoted to the correct item
     #
     assert input_params.min_distance == input_params.max_distance  # only works with this constraint
     max_num_types = np.max([input_params.num_ab_types,
                             input_params.num_x_test_types])
     window_size = input_params.max_distance + 1 + 1 + 1
-    max_type_pp = np.exp(-np.log(1 / max_num_types) * (1 / window_size))
-    return max_type_pp
+    max_item_pp = np.exp(-np.log(1 / max_num_types) * (1 / window_size))
+    return max_item_pp
 
 
 def print_params(params):

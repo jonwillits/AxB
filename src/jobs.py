@@ -17,22 +17,20 @@ def make_name2seqs(master_vocab, train_corpus, test_corpus):
     return res
 
 
-def train_loop(srn, input_params, name2seqs, master_vocab):
+def train_loop(srn, name2seqs, master_vocab):
     # init
     train_seqs = name2seqs['train']
     seq_names = name2seqs.keys()
     distances = np.arange(1, config.Eval.max_distance + 1)
     name2dist2cat_pps = {name: {dist: [] for dist in distances} for name in seq_names}
-    name2dist2type_pps = {name: {dist: [] for dist in distances} for name in seq_names}
+    name2dist2item_pps = {name: {dist: [] for dist in distances} for name in seq_names}
     #
-    seqs_pp = srn.train_epoch(train_seqs, train=False)
-    #
+    seqs_pp = srn.train_epoch(train_seqs, train=False)  # evaluate seqs_pp before training
     for epoch in range(srn.params.num_epochs):
-        # cat_pp + type_pp
-        calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2type_pps)
+        # cat_pp + item_pp
+        calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps)
         # train
         if config.Verbosity.seqs_pp:
             print('seqs_pp={}'.format(seqs_pp))
         seqs_pp = srn.train_epoch(train_seqs, train=True)
-
-    return name2dist2cat_pps, name2dist2type_pps
+    return name2dist2cat_pps, name2dist2item_pps

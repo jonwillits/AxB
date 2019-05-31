@@ -11,11 +11,11 @@ class AxbCorpus:
         self.max_distance = config.Eval.max_distance if test else params.max_distance
         print('Initializing {} corpus with max_distance={}'.format(
             'test' if test else 'train', self.max_distance))
-
+        #
         self.sequence_population = []
         self.sequence_sample = []
-        self.types = []
-        self.type2id = {}
+        self.items = []
+        self.item2id = {}
         self.num_sequences = None
         self.axb_pair_list = []
         self.a_list = []
@@ -29,8 +29,8 @@ class AxbCorpus:
         self.generate_sequence_sample()
         #
         if self.params.punctuation:
-            self.types.append('.')
-            self.type2id['.'] = len(self.types)
+            self.items.append('.')
+            self.item2id['.'] = len(self.items)
 
     def generate_vocab(self):
 
@@ -39,8 +39,8 @@ class AxbCorpus:
         for i in range(self.params.num_ab_types):  # B must come first because b_probs are assumed to be first in output
             b = "B" + str(i + 1)
             self.b_list.append(b)
-            self.types.append(b)
-            self.type2id[b] = vocab_counter
+            self.items.append(b)
+            self.item2id[b] = vocab_counter
             self.type2cat[b] = 'B'
             self.cat2types['B'].append(b)
             vocab_counter += 1
@@ -48,8 +48,8 @@ class AxbCorpus:
         for i in range(self.params.num_ab_types):
             a = "A" + str(i+1)
             self.a_list.append(a)
-            self.types.append(a)
-            self.type2id[a] = vocab_counter
+            self.items.append(a)
+            self.item2id[a] = vocab_counter
             self.type2cat[a] = 'A'
             self.cat2types['A'].append(a)
             vocab_counter += 1
@@ -62,8 +62,8 @@ class AxbCorpus:
         for i in range(self.num_x_types):
             x = "x" + str(i + 1)
             self.x_list.append(x)
-            self.types.append(x)
-            self.type2id[x] = vocab_counter
+            self.items.append(x)
+            self.item2id[x] = vocab_counter
             self.type2cat[x] = 'x'
             self.cat2types['x'].append(x)
             vocab_counter += 1
