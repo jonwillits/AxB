@@ -29,7 +29,7 @@ def train_loop(srn, input_params, name2seqs, master_vocab):
                                    input_params.num_ab_types, input_params.num_x_test_types])
         calc_pps(srn, master_vocab, name2seqs, distances, name2dist2cat_pps, name2dist2type_pps, split_indices)
         # train
-        if config.General.seqs_pp_verbose:
+        if config.Verbosity.seqs_pp_verbose:
             print('seqs_pp={}'.format(seqs_pp))
         seqs_pp = srn.train_epoch(train_seqs, train=True)
 

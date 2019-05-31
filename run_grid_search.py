@@ -21,8 +21,9 @@ PARAMS2 = [2, 4, 6, 8]
 DISTANCES = [[1, 1], [1, 2], [1, 3]]
 MAX_NUM_EPOCHS = 100
 PLOT_SEQ_NAMES = ['train', 'test']
+NUM_REPS = 10
 
-config.General.type_pp_verbose = False
+config.Verbosity.type_pp_verbose = False
 
 
 # params
@@ -54,7 +55,7 @@ for min_d, max_d in DISTANCES:
             setattr(rnn_params, 'bptt', max_d + 1)
             print_params(rnn_params)
             #
-            for _ in range(config.General.num_reps):
+            for _ in range(NUM_REPS):
                 # train + calc pp
                 srn = RNN(master_vocab.master_vocab_size, rnn_params)
                 _, name2dist2type_pps = train_loop(srn, input_params, name2seqs, master_vocab)
@@ -64,10 +65,12 @@ for min_d, max_d in DISTANCES:
                 # populate grid_mat
                 for seq_name, dist in product(seq_names, distances):
                     name2dist2grid_mat[seq_name][dist][i, j] += \
-                        name2dist2type_pp_at_end[seq_name][dist] / config.General.num_reps
+                        name2dist2type_pp_at_end[seq_name][dist] / NUM_REPS
 
     # plot
     time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
     plot_grid_search_results(time_stamp, name2dist2grid_mat, PLOT_SEQ_NAMES,
-                             MAX_NUM_EPOCHS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+                             MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+    setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
+    setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
     plot_params(time_stamp, input_params, rnn_params)

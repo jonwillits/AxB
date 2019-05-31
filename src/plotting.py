@@ -49,7 +49,7 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
 
 
 def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
-                             max_num_epochs, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
+                             num_epochs, num_reps, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
     if len(seq_names) == 2:
         height = 12
     elif len(seq_names) == 3:
@@ -104,7 +104,7 @@ def plot_grid_search_results(time_stamp, name2dist2grid_mat, seq_names,
         plt.setp(lines, visible=False)
     #
     fig.suptitle('Type-Perplexity for "B"\nepoch={}\nn={}\n{}'.format(
-        max_num_epochs, config.General.num_reps, time_stamp), fontsize=fontsize)
+        num_epochs, num_reps, time_stamp), fontsize=fontsize)
     gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
     plt.show()
 
