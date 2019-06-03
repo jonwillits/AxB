@@ -7,7 +7,7 @@ class AxbCorpus:
 
     def __init__(self, params, test):
         self.params = params
-        self.num_x_types = params.num_x_test_types if test else params.num_x_train_types
+        self.x_set_size = params.test_x_cat_size if test else params.train_x_cat_size
         self.max_distance = config.Eval.max_distance if test else params.max_distance
         print('Initializing {} corpus with max_distance={}'.format(
             'test' if test else 'train', self.max_distance))
@@ -36,7 +36,7 @@ class AxbCorpus:
 
         vocab_counter = 0
 
-        for i in range(self.params.num_ab_types):  # B must come first because b_probs are assumed to be first in output
+        for i in range(self.params.ab_cat_size):  # B must come first because b_probs are assumed to be first in output
             b = "B" + str(i + 1)
             self.b_list.append(b)
             self.items.append(b)
@@ -45,7 +45,7 @@ class AxbCorpus:
             self.cat2types['B'].append(b)
             vocab_counter += 1
 
-        for i in range(self.params.num_ab_types):
+        for i in range(self.params.ab_cat_size):
             a = "A" + str(i+1)
             self.a_list.append(a)
             self.items.append(a)
@@ -54,12 +54,12 @@ class AxbCorpus:
             self.cat2types['A'].append(a)
             vocab_counter += 1
 
-        for i in range(self.params.num_ab_types):
+        for i in range(self.params.ab_cat_size):
             a = "A" + str(i + 1)
             b = "B" + str(i + 1)
             self.axb_pair_list.append((a, b))
 
-        for i in range(self.num_x_types):
+        for i in range(self.x_set_size):
             x = "x" + str(i + 1)
             self.x_list.append(x)
             self.items.append(x)
@@ -92,7 +92,7 @@ class AxbCorpus:
             old_sequence = old_sequences[i]
 
             if len(old_sequence) == longest:
-                for j in range(self.num_x_types):
+                for j in range(self.x_set_size):
                     new_sequence = old_sequence.copy()
                     new_sequence.insert(insertion_position,self.x_list[j])
                     new_sequences.append(new_sequence)
@@ -103,7 +103,7 @@ class AxbCorpus:
         max_distance = self.max_distance
         min_distance = self.params.min_distance
 
-        for i in range(self.params.num_ab_types):
+        for i in range(self.params.ab_cat_size):
             new_sequence = [self.a_list[i], self.b_list[i]]
 
             if self.params.punctuation:

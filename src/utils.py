@@ -2,7 +2,7 @@ import numpy as np
 
 
 def calc_min_seqs_pp(input_params, num_types):
-    denom = input_params.num_ab_types + input_params.num_x_train_types + int(input_params.punctuation) + 1  # + 1 for B
+    denom = input_params.ab_cat_size + input_params.train_x_cat_size + int(input_params.punctuation) + 1  # + 1 for B
     min_seqs_pp = num_types / denom
     return min_seqs_pp
 
@@ -22,8 +22,8 @@ def calc_max_item_pp(input_params):
     # because least amount of probability mass is initially devoted to the correct item
     #
     assert input_params.min_distance == input_params.max_distance  # only works with this constraint
-    max_num_types = np.max([input_params.num_ab_types,
-                            input_params.num_x_test_types])
+    max_num_types = np.max([input_params.ab_cat_size,
+                            input_params.train_x_cat_size])
     window_size = input_params.max_distance + 1 + 1 + 1
     max_item_pp = np.exp(-np.log(1 / max_num_types) * (1 / window_size))
     return max_item_pp

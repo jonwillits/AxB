@@ -20,7 +20,7 @@ def check_item_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2i
             x, y = srn.to_x_and_y(filtered_seqs)
             num_windows = len(y)
             num_b_windows = np.sum([1 if master_vocab.items[yi].startswith('B') else 0 for yi in y])
-            max_b_item_pp = np.exp(-np.log(1 / input_params.num_ab_types) * num_b_windows / num_windows)
+            max_b_item_pp = np.exp(-np.log(1 / input_params.ab_cat_size) * num_b_windows / num_windows)
             min_b_item_pp = np.exp(-np.log(1 / 1) * num_b_windows / num_windows)
 
             #

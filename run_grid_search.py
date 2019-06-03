@@ -19,10 +19,11 @@ PARAMS1_NAME = 'learning_rate'
 PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
-TRAIN_DISTANCES = [[1, 1]]
+TRAIN_DISTANCES = [[1, 2]]
+TRAIN_X_SET_SIZES = [2, 4, 6]
 MAX_NUM_EPOCHS = 100
 PLOT_SEQ_NAMES = ['train', 'test']
-NUM_REPS = 1
+NUM_REPS = 10
 PROGRESS_BAR = True
 LIMIT_BPPT = False  # if True, generalization to unseen distances is impossible
 
@@ -38,15 +39,16 @@ setattr(rnn_params, 'bptt', config.Eval.max_distance + 1)
 print('Set bptt to {}'.format(rnn_params.bptt))
 
 # do for each distance setting
-for min_d, max_d in TRAIN_DISTANCES:
+for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZES):
 
     # progressbar
     print('Grid search with min_distance={} and max_distance={}'.format(min_d, max_d))
     pbar = pyprind.ProgBar(len(PARAMS1) * len(PARAMS2), stream=sys.stdout)
 
-    # set min and max distance before generating sequences
+    # modify input_params before generating sequences
     setattr(input_params, 'min_distance', min_d)
     setattr(input_params, 'max_distance', max_d)
+    setattr(input_params, 'train_x_cat_size', train_x_cat_size)
 
     if LIMIT_BPPT:  # sets bptt to maxmal bptt needed to learn training dependencies only
         setattr(rnn_params, 'bptt', max_d + 1)

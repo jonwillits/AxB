@@ -15,9 +15,9 @@ class Eval:
 
 class Input:
     # the basic parameters of the AxB grammar
-    num_ab_types = 2
-    num_x_train_types = 6
-    num_x_test_types = 6
+    ab_cat_size = 2
+    train_x_cat_size = 6
+    test_x_cat_size = 6
     min_distance = 1
     max_distance = 2
     punctuation = False
