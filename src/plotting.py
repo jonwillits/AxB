@@ -48,7 +48,7 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_grid_search_results(time_stamp, name2dist2grid_mat, name2dist2start_pp, seq_names,
+def plot_grid_search_results(time_stamp, pp_name, name2dist2pp_mat, name2dist2pp_start, seq_names,
                              num_epochs, num_reps, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
     if len(seq_names) == 2:
         height = 12
@@ -66,11 +66,11 @@ def plot_grid_search_results(time_stamp, name2dist2grid_mat, name2dist2start_pp,
         ax.set_ylabel(ylabel, fontsize=fontsize)
         ax.set_xlabel(xlabel, fontsize=fontsize)
         # heatmap
-        mat = name2dist2grid_mat[seq_name][dist]
+        mat = name2dist2pp_mat[seq_name][dist]
         if np.count_nonzero(mat) == 0:
             ax.set_axis_off()
         else:
-            vmax = name2dist2start_pp[seq_name][dist]
+            vmax = name2dist2pp_start[seq_name][dist]
             vmin = 1.0
             im = ax.imshow(mat,
                            aspect='auto',
@@ -105,8 +105,8 @@ def plot_grid_search_results(time_stamp, name2dist2grid_mat, name2dist2start_pp,
                  ax.yaxis.get_ticklines())
         plt.setp(lines, visible=False)
     #
-    fig.suptitle('Type-Perplexity for "B"\nepoch={}\nn={}\n{}'.format(
-        num_epochs, num_reps, time_stamp), fontsize=fontsize)
+    fig.suptitle('{}-Perplexity for "B"\nepoch={}\nn={}\n{}'.format(
+        pp_name, num_epochs, num_reps, time_stamp), fontsize=fontsize)
     gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
     plt.show()
 

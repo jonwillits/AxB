@@ -1,6 +1,7 @@
 
 
 class Verbosity:
+    softmax = True
     summary = False
     cat_pp = False
     item_pp = False
@@ -15,8 +16,8 @@ class Eval:
 class Input:
     # the basic parameters of the AxB grammar
     num_ab_types = 2
-    num_x_train_types = 2
-    num_x_test_types = 4
+    num_x_train_types = 6
+    num_x_test_types = 6
     min_distance = 1
     max_distance = 2
     punctuation = False

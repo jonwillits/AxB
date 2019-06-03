@@ -60,6 +60,11 @@ def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps
             all_logits = srn.calc_logits(filtered_seqs)
             all_probs = softmax(all_logits, axis=1)
 
+            # if config.Verbosity.softmax:  # TODO what are probs when training on dist 1, 2 and testing on 3?
+            #     for row in all_probs:
+                    # print([(master_vocab.items[n], prob) for n, prob in enumerate(row)])
+            # raise NotImplemented
+
             # get values for category B only
             num_b = len([item for item in master_vocab.items if item.startswith('B')])
             b_probs = all_probs[:, :num_b]
