@@ -2,7 +2,7 @@
 class Vocab:
     def __init__(self, *corpus_list):
         self.corpus_list = [corpus for corpus in corpus_list]
-        self.items = self.make_types()
+        self.items = self.make_items()
         self.item2id = {item: n for n, item in enumerate(self.items)}
         #
         assert 'B1' == self.items[0]  # item-perplexity evaluation assumes B items come first in output
@@ -14,9 +14,11 @@ class Vocab:
         for k, v in sorted(self.item2id.items(), key=lambda i: i[1]):
             print(k, v)
 
-        self.num_types = len(self.items)
+    @property
+    def num_items(self):
+        return len(self.items)
 
-    def make_types(self):
+    def make_items(self):
         res = []
         for corpus in self.corpus_list:
             for item in corpus.items:

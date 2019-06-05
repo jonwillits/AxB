@@ -49,9 +49,9 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_pp_vs_x_cat_size(pps_at_end, x, seq_name, ylabel_prefix, figsize=(8, 8), fontsize=14, y_max=None, grid=False):
+def plot_pp_vs_x_cat_size(pps_at_end, x, num_reps, ylabel_prefix, figsize=(8, 8), fontsize=14, y_max=None, grid=False):
     fig, ax = plt.subplots(figsize=figsize, dpi=None)
-    plt.title('sequences = "{}"'.format(seq_name), fontsize=fontsize)
+    plt.title('n={}'.format(num_reps), fontsize=fontsize)
     ax.set_xlabel('Size of Category X', fontsize=fontsize)
     ax.set_ylabel('{} Perplexity'.format(ylabel_prefix), fontsize=fontsize)
     ax.spines['right'].set_visible(False)

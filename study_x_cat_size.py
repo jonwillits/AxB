@@ -14,13 +14,12 @@ from src.rnn import RNN
 from src import config
 
 
-# TODO keep output size of model constant
+# TODO plot multiple lines in same figure, one for each iteration
 
 TRAIN_DISTANCE = 1
 TRAIN_X_CAT_SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
-NUM_REPS = 30
-PROGRESS_BAR = False
-LIMIT_BPPT = True  # if True, generalization to unseen distances is impossible
+NUM_REPS = 100
+PROGRESS_BAR = True
 MAX_NUM_SEQUENCES = 72  # 72 is the total number of sequences in corpus with x_cat_size=24 and ab_cat_size=1
 NUM_ITERATIONS = 1  # number of times each sequence will be heard (on average), Gomez, 2002 used 6
 
@@ -28,8 +27,10 @@ NUM_ITERATIONS = 1  # number of times each sequence will be heard (on average), 
 input_params = config.Input  # cannot be copied
 rnn_params = config.RNN  # cannot be copied
 
-# set bptt such that it is possible to learn dependencies across largest distance
-setattr(rnn_params, 'bptt', config.Eval.max_distance + 1)
+# modify rnn_params
+# only use 1 epoch (to increase training, increase NUM_ITERATIONS)
+setattr(rnn_params, 'num_epochs', 1)
+setattr(rnn_params, 'bptt', TRAIN_DISTANCE + 1)
 print('Set bptt to {}'.format(rnn_params.bptt))
 
 # modify input_params
@@ -58,12 +59,11 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
     seq_names = name2seqs.keys()
     print('number of sequences in train corpus={}'.format(train_corpus.num_sequences))
 
-    # only use 1 epoch (to increase training, increase SEQUENCE_MULTIPLIER)
-    setattr(rnn_params, 'num_epochs', 1)
-
-    if LIMIT_BPPT:  # sets bptt to maximal bptt needed to learn training dependencies only
-        setattr(rnn_params, 'bptt', TRAIN_DISTANCE + 1)
-        print('Set bptt to {}'.format(rnn_params.bptt))
+    # keep input and output size of model constant
+    master_vocab.items.extend(['x{}'.format(i+1) for i in range(len(TRAIN_X_CAT_SIZES))
+                               if 'x{}'.format(i+1) not in master_vocab.items])
+    print(master_vocab.items)
+    print(master_vocab.num_items)
 
     # progressbar
     print('Training {} models...'.format(NUM_REPS))
@@ -82,9 +82,8 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
                 rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
 
         # populate result data structures
-        dist = TRAIN_DISTANCE
-        item_pps = name2dist2item_pps['train'][dist]
-        cat_pps = name2dist2cat_pps['train'][dist]
+        item_pps = name2dist2item_pps['train'][TRAIN_DISTANCE]
+        cat_pps = name2dist2cat_pps['train'][TRAIN_DISTANCE]
         if not item_pps or not cat_pps:
             continue
         item_pps_end[size_id] += item_pps[-1] / NUM_REPS
@@ -96,4 +95,4 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 # plot perplexity as function of x category size
 time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
 plot_params(time_stamp, input_params, rnn_params)
-plot_pp_vs_x_cat_size(item_pps_end, TRAIN_X_CAT_SIZES, 'train', 'Item', y_max=max_item_pp)
+plot_pp_vs_x_cat_size(item_pps_end, TRAIN_X_CAT_SIZES, NUM_REPS, 'Item', y_max=max_item_pp)

@@ -56,7 +56,7 @@ def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps
 
             # logits and softmax probabilities
             x, y = srn.to_x_and_y(filtered_seqs)
-            one_hots = np.eye(master_vocab.num_types)[y]
+            one_hots = np.eye(master_vocab.num_items)[y]
             all_logits = srn.calc_logits(filtered_seqs)
             all_probs = softmax(all_logits, axis=1)
 

@@ -5,7 +5,7 @@ from cytoolz import itertoolz
 
 class RNN:
     def __init__(self, master_vocab, params):
-        self.input_size = master_vocab.num_types
+        self.input_size = master_vocab.num_items
         self.pad_id = master_vocab.items.index('PAD')
         self.params = params
         #

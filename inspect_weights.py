@@ -32,7 +32,7 @@ for hidden_size in [3, 4, 5, 6, 7, 8]:
     name2dist2cat_pps, name2dist2item_pps = train_loop(rnn, name2seqs, master_vocab)
 
     # plot item perplexity (to verify training was successful)
-    max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_types)
+    max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_items)
     plot_cat_and_item_pps(name2dist2cat_pps, name2dist2item_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
 
     # store weights in dict where the key is the name of the weight matrix
