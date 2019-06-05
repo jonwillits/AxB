@@ -13,14 +13,16 @@ from src.vocab import Vocab
 from src.rnn import RNN
 from src import config
 
+
+# TODO keep output size of model constant
+
 TRAIN_DISTANCE = 1
 TRAIN_X_CAT_SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
-MAX_NUM_EPOCHS = 2
-NUM_REPS = 10
-PROGRESS_BAR = True
+NUM_REPS = 30
+PROGRESS_BAR = False
 LIMIT_BPPT = True  # if True, generalization to unseen distances is impossible
-MAX_NUM_SEQUENCES = 48  # total number of sequences in corpus with x_cat_size=24
-
+MAX_NUM_SEQUENCES = 72  # 72 is the total number of sequences in corpus with x_cat_size=24 and ab_cat_size=1
+NUM_ITERATIONS = 1  # number of times each sequence will be heard (on average), Gomez, 2002 used 6
 
 # params
 input_params = config.Input  # cannot be copied
@@ -30,6 +32,15 @@ rnn_params = config.RNN  # cannot be copied
 setattr(rnn_params, 'bptt', config.Eval.max_distance + 1)
 print('Set bptt to {}'.format(rnn_params.bptt))
 
+# modify input_params
+setattr(input_params, 'min_distance', TRAIN_DISTANCE)
+setattr(input_params, 'max_distance', TRAIN_DISTANCE)
+setattr(input_params, 'sample_size', MAX_NUM_SEQUENCES * NUM_ITERATIONS)
+setattr(input_params, 'ab_cat_size', 3)  # Gomez, 2002 used 3
+
+max_item_pp = calc_max_item_pp(input_params, 'B')
+print('max_item_pp={}'.format(max_item_pp))
+
 # init result data structures
 item_pps_end = np.zeros(len(TRAIN_X_CAT_SIZES))
 cat_pps_end = np.zeros(len(TRAIN_X_CAT_SIZES))
@@ -37,15 +48,8 @@ cat_pps_end = np.zeros(len(TRAIN_X_CAT_SIZES))
 # do for each train x category size
 for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 
-    # modify input_params before generating sequences
+    # update train_x_cat_size before generating sequences
     setattr(input_params, 'train_x_cat_size', train_x_cat_size)
-    setattr(input_params, 'test_x_cat_size', train_x_cat_size)
-    setattr(input_params, 'min_distance', TRAIN_DISTANCE)
-    setattr(input_params, 'max_distance', TRAIN_DISTANCE)
-    setattr(input_params, 'sample_size', MAX_NUM_SEQUENCES)
-
-    max_item_pp = calc_max_item_pp(input_params, 'B')
-    print('max_item_pp={}'.format(max_item_pp))
 
     # make train but not test sequences
     train_corpus = AxbCorpus(input_params, test=False)
@@ -54,8 +58,8 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
     seq_names = name2seqs.keys()
     print('number of sequences in train corpus={}'.format(train_corpus.num_sequences))
 
-    # set max epoch
-    setattr(rnn_params, 'num_epochs', MAX_NUM_EPOCHS)
+    # only use 1 epoch (to increase training, increase SEQUENCE_MULTIPLIER)
+    setattr(rnn_params, 'num_epochs', 1)
 
     if LIMIT_BPPT:  # sets bptt to maximal bptt needed to learn training dependencies only
         setattr(rnn_params, 'bptt', TRAIN_DISTANCE + 1)
@@ -93,6 +97,3 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
 plot_params(time_stamp, input_params, rnn_params)
 plot_pp_vs_x_cat_size(item_pps_end, TRAIN_X_CAT_SIZES, 'train', 'Item', y_max=max_item_pp)
-
-
-    # TODO keep output size of model constant
