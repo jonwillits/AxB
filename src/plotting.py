@@ -49,10 +49,10 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     plt.show()
 
 
-def plot_pp_vs_x_cat_size(dist2pps, x, seq_name, ylabel_prefix, figsize=(8, 8), fontsize=14, y_max=None, grid=False):
+def plot_pp_vs_x_cat_size(pps_at_end, x, seq_name, ylabel_prefix, figsize=(8, 8), fontsize=14, y_max=None, grid=False):
     fig, ax = plt.subplots(figsize=figsize, dpi=None)
     plt.title('sequences = "{}"'.format(seq_name), fontsize=fontsize)
-    ax.set_xlabel('Category Size of X', fontsize=fontsize)
+    ax.set_xlabel('Size of Category X', fontsize=fontsize)
     ax.set_ylabel('{} Perplexity'.format(ylabel_prefix), fontsize=fontsize)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -62,19 +62,14 @@ def plot_pp_vs_x_cat_size(dist2pps, x, seq_name, ylabel_prefix, figsize=(8, 8), 
         ax.xaxis.grid(True)
     if y_max is not None:
         ax.set_ylim([1, y_max])
-    else:
-        all_vals = np.concatenate([pps for pps in dist2pps.values()])
-        ax.set_ylim([1, np.max(all_vals)])
+
     # plot
-    num_trajs = len(dist2pps)
-    palette = iter(sns.color_palette('hls', num_trajs))
-    for dist, pps in sorted(dist2pps.items(), key=lambda i: i[0]):
-        c = next(palette)
-        ax.plot(x, pps, '-', color=c, label='distance={}'.format(dist))
+    palette = iter(sns.color_palette('hls', 1))
+    c = next(palette)
+    ax.plot(x, pps_at_end, '-', color=c)
     ax.set_xticks(x)
     ax.set_xticklabels(x)
     #
-    plt.legend(loc='best', frameon=False)
     plt.tight_layout()
     plt.show()
 

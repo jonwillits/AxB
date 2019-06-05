@@ -4,7 +4,7 @@ from src.evaluation import calc_pps
 from src import config
 
 
-def make_name2seqs(master_vocab, train_corpus, test_corpus):
+def make_name2seqs(master_vocab, train_corpus, test_corpus=None):
     train_seqs = master_vocab.generate_index_sequences(train_corpus)
     test_seqs = master_vocab.generate_index_sequences(test_corpus)
     novel_seqs = [seq for seq in test_seqs if seq not in train_seqs] or test_seqs
