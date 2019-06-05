@@ -10,7 +10,7 @@ class Vocab:
 
         self.item2id['PAD'] = len(self.items)
         self.items.append('PAD')
-        print('Initializing vocab with punctuation id={}'.format(len(self.items)))
+        print('Initializing vocab with pad_id={}'.format(self.item2id['PAD']))
         for k, v in sorted(self.item2id.items(), key=lambda i: i[1]):
             print(k, v)
 

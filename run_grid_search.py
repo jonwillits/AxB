@@ -16,18 +16,16 @@ from src.rnn import RNN
 from src import config
 
 PARAMS1_NAME = 'learning_rate'
-PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
+PARAMS1 = [0.25] or [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
-PARAMS2 = [2, 4, 6, 8]
-TRAIN_DISTANCES = [[1, 2]]
+PARAMS2 = [8] or [2, 4, 6, 8]
+TRAIN_DISTANCES = [[0, 1]]
 TRAIN_X_SET_SIZES = [2, 4, 6]
 MAX_NUM_EPOCHS = 100
 PLOT_SEQ_NAMES = ['train', 'test']
-NUM_REPS = 10
+NUM_REPS = 1
 PROGRESS_BAR = True
 LIMIT_BPPT = False  # if True, generalization to unseen distances is impossible
-
-config.Verbosity.item_pp = False
 
 
 # params
@@ -50,18 +48,18 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
     setattr(input_params, 'max_distance', max_d)
     setattr(input_params, 'train_x_cat_size', train_x_cat_size)
 
-    if LIMIT_BPPT:  # sets bptt to maxmal bptt needed to learn training dependencies only
+    if LIMIT_BPPT:  # sets bptt to maximal bptt needed to learn training dependencies only
         setattr(rnn_params, 'bptt', max_d + 1)
         print('Set bptt to {}'.format(rnn_params.bptt))
 
-    # seqs_data
+    # make train and test sequences
     train_corpus = AxbCorpus(input_params, test=False)
     test_corpus = AxbCorpus(input_params,  test=True)
     master_vocab = Vocab(train_corpus, test_corpus)
     name2seqs = make_name2seqs(master_vocab, train_corpus, test_corpus)
     seq_names = name2seqs.keys()
 
-    # init results
+    # init result data structures
     distances = np.arange(1, config.Eval.max_distance + 1)
     name2dist2item_pp_mat = {seq_name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
                              for seq_name in seq_names}
@@ -84,7 +82,7 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
             if not PROGRESS_BAR:
                 print_params(rnn_params)
 
-            # each cell in grid is average over multiple models
+            # train and evaluate multiple models per hyper-parameter configuration
             for _ in range(NUM_REPS):
 
                 # train + evaluate
@@ -96,7 +94,7 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
                     check_item_pp_at_end(
                         rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
 
-                # populate matrices
+                # populate result data structures
                 for seq_name, dist in product(seq_names, distances):
                     item_pps = name2dist2item_pps[seq_name][dist]
                     cat_pps = name2dist2cat_pps[seq_name][dist]
@@ -112,7 +110,7 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
             if PROGRESS_BAR:
                 pbar.update()
 
-    # plot
+    # plot heatmaps showing item or category perplexity for al hyper-parameter configurations
     time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
     setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
     setattr(rnn_params, PARAMS2_NAME, '<grid_search>')

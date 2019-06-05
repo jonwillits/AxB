@@ -16,7 +16,7 @@ def plot_cat_and_item_pps(name2dist2cat_pps, name2dist2item_pps, seq_names, max_
         plot_pp_trajs(name2dist2item_pps[name], name, 'Type', y_max=None)
 
 
-def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x_step=10, y_max=None):
+def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x_step=10, y_max=None, grid=False):
     fig, ax = plt.subplots(figsize=figsize, dpi=None)
     plt.title('sequences = "{}"'.format(title), fontsize=fontsize)
     ax.set_xlabel('Epoch', fontsize=fontsize)
@@ -24,24 +24,55 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(axis='both', which='both', top=False, right=False)
-    # ax.yaxis.grid(True)
-    # ax.xaxis.grid(True)
+    if grid:
+        ax.yaxis.grid(True)
+        ax.xaxis.grid(True)
     if y_max is not None:
         ax.set_ylim([1, y_max])
     else:
         all_vals = np.concatenate([pps for pps in dist2pps.values()])
         ax.set_ylim([1, np.max(all_vals)])
     # plot
-    xticks = None
+    x = None
     num_trajs = len(dist2pps)
     palette = iter(sns.color_palette('hls', num_trajs))
     for dist, pps in sorted(dist2pps.items(), key=lambda i: i[0]):
         num_pps = len(pps)
-        xticks = np.arange(0, num_pps + 1, x_step)
+        x = np.arange(0, num_pps + 1, x_step)
         c = next(palette)
         ax.plot(pps, '-', color=c, label='distance={}'.format(dist))
-    ax.set_xticks(xticks)
-    ax.set_xticklabels(xticks)
+    ax.set_xticks(x)
+    ax.set_xticklabels(x)
+    #
+    plt.legend(loc='best', frameon=False)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_pp_vs_x_cat_size(dist2pps, x, seq_name, ylabel_prefix, figsize=(8, 8), fontsize=14, y_max=None, grid=False):
+    fig, ax = plt.subplots(figsize=figsize, dpi=None)
+    plt.title('sequences = "{}"'.format(seq_name), fontsize=fontsize)
+    ax.set_xlabel('Category Size of X', fontsize=fontsize)
+    ax.set_ylabel('{} Perplexity'.format(ylabel_prefix), fontsize=fontsize)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.tick_params(axis='both', which='both', top=False, right=False)
+    if grid:
+        ax.yaxis.grid(True)
+        ax.xaxis.grid(True)
+    if y_max is not None:
+        ax.set_ylim([1, y_max])
+    else:
+        all_vals = np.concatenate([pps for pps in dist2pps.values()])
+        ax.set_ylim([1, np.max(all_vals)])
+    # plot
+    num_trajs = len(dist2pps)
+    palette = iter(sns.color_palette('hls', num_trajs))
+    for dist, pps in sorted(dist2pps.items(), key=lambda i: i[0]):
+        c = next(palette)
+        ax.plot(x, pps, '-', color=c, label='distance={}'.format(dist))
+    ax.set_xticks(x)
+    ax.set_xticklabels(x)
     #
     plt.legend(loc='best', frameon=False)
     plt.tight_layout()
