@@ -33,12 +33,18 @@ class RNN:
         """
         if num_seqs_in_batch is None:
             num_seqs_in_batch = self.params.num_seqs_in_batch
-        all_windows = [self.to_windows(seq) for seq in seqs]
+        all_windows = [self.to_windows(seq) for seq in seqs]  # shape = [num_sequences, seq_length, bptt + 1]
         if len(all_windows) % num_seqs_in_batch != 0:
             raise RuntimeError('Set number of sequences in batch to factor of number of sequences {}.'.format(
                 len(seqs)))
+        #
         for windows_in_batch in itertoolz.partition_all(num_seqs_in_batch, all_windows):
-            yield np.vstack(windows_in_batch)
+            if self.params.no_batching:
+                # windows_in_batch has shape = [num_seqs_in_batch, seq_length, bptt + 1]
+                for window in windows_in_batch:
+                    yield np.asarray(window)
+            else:
+                yield np.vstack(windows_in_batch)
 
     def train_epoch(self, seqs, train=True):
         """

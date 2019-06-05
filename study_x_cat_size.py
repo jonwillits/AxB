@@ -21,7 +21,7 @@ TRAIN_X_CAT_SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 
 NUM_REPS = 100
 PROGRESS_BAR = True
 MAX_NUM_SEQUENCES = 72  # 72 is the total number of sequences in corpus with x_cat_size=24 and ab_cat_size=1
-NUM_ITERATIONS = 1  # number of times each sequence will be heard (on average), Gomez, 2002 used 6
+NUM_ITERATIONS = 3  # number of times each sequence will be heard (on average), Gomez, 2002 used 6
 
 # params
 input_params = config.Input  # cannot be copied
@@ -62,8 +62,6 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
     # keep input and output size of model constant
     master_vocab.items.extend(['x{}'.format(i+1) for i in range(len(TRAIN_X_CAT_SIZES))
                                if 'x{}'.format(i+1) not in master_vocab.items])
-    print(master_vocab.items)
-    print(master_vocab.num_items)
 
     # progressbar
     print('Training {} models...'.format(NUM_REPS))

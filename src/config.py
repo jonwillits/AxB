@@ -36,3 +36,4 @@ class RNN:
     learning_rate = 0.25
     init_range = 0.001
     optimization = 'adagrad'
+    no_batching = True
