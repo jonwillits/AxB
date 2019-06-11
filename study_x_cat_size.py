@@ -72,7 +72,8 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 
         # train + evaluate
         rnn = RNN(master_vocab, rnn_params)
-        name2dist2cat_pps, name2dist2item_pps = train_loop(rnn, name2seqs, master_vocab)
+        cat2results = train_loop(rnn, name2seqs, master_vocab)
+        name2dist2cat_pps, name2dist2item_pps = cat2results['B']
 
         # check item-perplexity against theory
         if not PROGRESS_BAR:

@@ -4,9 +4,8 @@ import sys
 import pyprind
 from itertools import product
 
-from src.evaluation import check_item_pp_at_end
 from src.utils import print_params
-from src.plotting import plot_grid_search_results
+from src.plotting import plot_grid_search_results_marcus
 from src.plotting import plot_params
 from src.jobs import train_loop
 from src.jobs import make_name2seqs
@@ -16,15 +15,16 @@ from src.rnn import RNN
 from src import config
 
 PARAMS1_NAME = 'learning_rate'
-PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
+PARAMS1 = [0.25] or [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
-PARAMS2 = [2, 4, 6, 8]
+PARAMS2 = [8] or [2, 4, 6, 8]
 MAX_NUM_EPOCHS = 100
 PLOT_SEQ_NAMES = ['train', 'novel']
 NUM_REPS = 1
 PROGRESS_BAR = True
 
 config.Eval.skip_novel = False  # evaluate on 'novel' sequences only (only unseen sequences)
+config.Eval.max_distance = 1  # TODO what are the consequences of this?
 
 # params
 input_params = config.Marcus  # cannot be copied
@@ -52,15 +52,15 @@ for pattern in ['abb', 'aab', 'aba']:
     seq_names = name2seqs.keys()
 
     # init result data structures
-    distances = np.arange(1, config.Eval.max_distance + 1)
-    name2dist2item_pp_mat = {seq_name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
-                             for seq_name in seq_names}
-    name2dist2cat_pp_mat = {seq_name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
+    cats = ['A', 'B']
+    name2cat2item_pp_mat = {seq_name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in cats}
                             for seq_name in seq_names}
-    name2dist2item_pp_start = {seq_name: {dist: None for dist in distances}
-                               for seq_name in seq_names}
-    name2dist2cat_pp_start = {seq_name: {dist: None for dist in distances}
+    name2cat2cat_pp_mat = {seq_name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in cats}
+                           for seq_name in seq_names}
+    name2cat2item_pp_start = {seq_name: {cat: None for cat in cats}
                               for seq_name in seq_names}
+    name2cat2cat_pp_start = {seq_name: {cat: None for cat in cats}
+                             for seq_name in seq_names}
 
     # grid search over rnn_params
     for i, param1 in enumerate(PARAMS1):
@@ -79,25 +79,21 @@ for pattern in ['abb', 'aab', 'aba']:
 
                 # train + evaluate
                 rnn = RNN(master_vocab, rnn_params)
-                name2dist2cat_pps, name2dist2item_pps = train_loop(rnn, name2seqs, master_vocab)
-
-                # check item-perplexity against theory
-                if not PROGRESS_BAR:
-                    check_item_pp_at_end(
-                        rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
+                cat2results = train_loop(rnn, name2seqs, master_vocab)
 
                 # populate result data structures
-                for seq_name, dist in product(seq_names, distances):
-                    item_pps = name2dist2item_pps[seq_name][dist]
-                    cat_pps = name2dist2cat_pps[seq_name][dist]
+                for seq_name, cat in product(seq_names, cats):
+                    name2dist2cat_pps, name2dist2item_pps = cat2results[cat]
+                    cat_pps = name2dist2cat_pps[seq_name][1]
+                    item_pps = name2dist2item_pps[seq_name][1]  # TODO what the consequences of dist=1 here?
                     if not item_pps or not cat_pps:
                         continue
-                    # item-perplexity
-                    name2dist2item_pp_mat[seq_name][dist][i, j] += item_pps[-1] / NUM_REPS
-                    name2dist2item_pp_start[seq_name][dist] = item_pps[0]
                     # category-perplexity
-                    name2dist2cat_pp_mat[seq_name][dist][i, j] += cat_pps[-1] / NUM_REPS
-                    name2dist2cat_pp_start[seq_name][dist] = cat_pps[0]
+                    name2cat2cat_pp_mat[seq_name][cat][i, j] += cat_pps[-1] / NUM_REPS
+                    name2cat2cat_pp_start[seq_name][cat] = cat_pps[0]
+                    # item-perplexity
+                    name2cat2item_pp_mat[seq_name][cat][i, j] += item_pps[-1] / NUM_REPS
+                    name2cat2item_pp_start[seq_name][cat] = item_pps[0]
 
             if PROGRESS_BAR:
                 pbar.update()
@@ -107,9 +103,11 @@ for pattern in ['abb', 'aab', 'aba']:
     setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
     setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
     plot_params(time_stamp, input_params, rnn_params)
-    plot_grid_search_results(time_stamp, 'Item', name2dist2item_pp_mat, name2dist2item_pp_start, PLOT_SEQ_NAMES,
-                             MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
-    plot_grid_search_results(time_stamp, 'Category', name2dist2cat_pp_mat, name2dist2cat_pp_start, PLOT_SEQ_NAMES,
-                             MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+    plot_grid_search_results_marcus(time_stamp, 'Item', name2cat2item_pp_mat, name2cat2item_pp_start, pattern,
+                                    PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
+                                    PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+    plot_grid_search_results_marcus(time_stamp, 'Category', name2cat2cat_pp_mat, name2cat2cat_pp_start, pattern,
+                                    PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
+                                    PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
 
 

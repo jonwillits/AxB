@@ -39,9 +39,9 @@ def check_item_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2i
             print('b_item_pp_at_end  ={}'.format(b_item_pp_at_end))
 
 
-def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps,):
+def calc_pps(srn, master_vocab, name2seqs, cat, name2dist2cat_pps, name2dist2item_pps):
     for seq_name, seqs in name2seqs.items():
-        for dist in range(1, config.Eval.max_distance + 1):
+        for dist in range(config.Eval.max_distance + 1):  # include distance=0
 
             # remove sequences not matching distance
             punctuation = '.' in master_vocab.items
@@ -65,20 +65,20 @@ def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps
                     # print([(master_vocab.items[n], prob) for n, prob in enumerate(row)])
             # raise NotImplemented
 
-            # get values for category B only
-            num_b = len([item for item in master_vocab.items if item.startswith('B')])
-            b_probs = all_probs[:, :num_b]
-            b_logits = all_logits[:, :num_b]
-            b_onehot = one_hots[:, :num_b]
+            # get values for specified category only
+            cat_size = len([item for item in master_vocab.items if item.startswith(cat)])
+            cat_probs = all_probs[:, :cat_size]
+            cat_logits = all_logits[:, :cat_size]
+            cat_onehot = one_hots[:, :cat_size]
 
             # perplexity for category
-            predictions = b_probs.sum(axis=1)  # sum() explains why initial pp differ between categories
-            targets = np.array([1 if master_vocab.items[yi].startswith('B') else 0 for yi in y])
+            predictions = cat_probs.sum(axis=1)  # sum() explains why initial pp differ between categories
+            targets = np.array([1 if master_vocab.items[yi].startswith(cat) else 0 for yi in y])
             pp_cat = np.exp(calc_cross_entropy(predictions, targets))
             name2dist2cat_pps[seq_name][dist].append(pp_cat)
             #
             if config.Verbosity.cat_pp:
-                print(b_probs.round(2))
+                print(cat_probs.round(2))
                 print(predictions.round(2))
                 print(targets)
                 print(targets * np.log(predictions + 1e-9).round(2))
@@ -86,13 +86,13 @@ def calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps
                 print()
 
             # perplexity for item
-            predictions = softmax(b_logits, axis=1)
-            targets = b_onehot
+            predictions = softmax(cat_logits, axis=1)
+            targets = cat_onehot
             pp_type = np.exp(calc_cross_entropy(predictions, targets))
             name2dist2item_pps[seq_name][dist].append(pp_type)
             #
             if config.Verbosity.item_pp:
-                print(b_logits.round(2))
+                print(cat_logits.round(2))
                 print(predictions.round(2))
                 print(targets)
                 print(targets * np.log(predictions + 1e-9).round(2))

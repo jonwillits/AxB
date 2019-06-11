@@ -25,7 +25,8 @@ name2seqs = make_name2seqs(master_vocab, train_corpus, test_corpus)
 
 # train
 rnn = RNN(master_vocab, rnn_params)
-name2dist2cat_pps, name2dist2item_pps = train_loop(rnn, name2seqs, master_vocab)
+cat2results = train_loop(rnn, name2seqs, master_vocab)
+name2dist2cat_pps, name2dist2item_pps = cat2results['B']
 
 # plot
 max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_items)

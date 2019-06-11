@@ -87,7 +87,8 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
 
                 # train + evaluate
                 rnn = RNN(master_vocab, rnn_params)
-                name2dist2cat_pps, name2dist2item_pps = train_loop(rnn, name2seqs, master_vocab)
+                cat2results = train_loop(rnn, name2seqs, master_vocab)
+                name2dist2cat_pps, name2dist2item_pps = cat2results['B']
 
                 # check item-perplexity against theory
                 if not PROGRESS_BAR:
@@ -100,12 +101,12 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
                     cat_pps = name2dist2cat_pps[seq_name][dist]
                     if not item_pps or not cat_pps:
                         continue
-                    # item-perplexity
-                    name2dist2item_pp_mat[seq_name][dist][i, j] += item_pps[-1] / NUM_REPS
-                    name2dist2item_pp_start[seq_name][dist] = item_pps[0]
                     # category-perplexity
                     name2dist2cat_pp_mat[seq_name][dist][i, j] += cat_pps[-1] / NUM_REPS
                     name2dist2cat_pp_start[seq_name][dist] = cat_pps[0]
+                    # item-perplexity
+                    name2dist2item_pp_mat[seq_name][dist][i, j] += item_pps[-1] / NUM_REPS
+                    name2dist2item_pp_start[seq_name][dist] = item_pps[0]
 
             if PROGRESS_BAR:
                 pbar.update()
@@ -115,9 +116,9 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
     setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
     setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
     plot_params(time_stamp, input_params, rnn_params)
-    plot_grid_search_results(time_stamp, 'Item', name2dist2item_pp_mat, name2dist2item_pp_start, PLOT_SEQ_NAMES,
+    plot_grid_search_results(time_stamp, 'B', 'Item', name2dist2item_pp_mat, name2dist2item_pp_start, PLOT_SEQ_NAMES,
                              MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
-    plot_grid_search_results(time_stamp, 'Category', name2dist2cat_pp_mat, name2dist2cat_pp_start, PLOT_SEQ_NAMES,
+    plot_grid_search_results(time_stamp, 'B', 'Category', name2dist2cat_pp_mat, name2dist2cat_pp_start, PLOT_SEQ_NAMES,
                              MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
 
 

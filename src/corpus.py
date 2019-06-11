@@ -24,7 +24,7 @@ class MarcusCorpus:
         self.generate_sequence_population()
         self.generate_sequence_sample()
         #
-        if self.params.punctuation:
+        if self.params.punctuation or self.params.punctuation_at_start:
             self.items.append('.')
             self.item2id['.'] = len(self.items)
             
@@ -63,14 +63,12 @@ class MarcusCorpus:
                 else:
                     raise AttributeError('Invalid arg to "pattern".')
 
+                if self.params.punctuation_at_start:
+                    sequence.insert(0, ".")
                 if self.params.punctuation:
-                    sequence.insert(0, "_")
-                    sequence.append("_")
+                    sequence.append(".")
 
                 self.sequence_population.append(sequence)
-
-        for sequence in self.sequence_population:  # TODO test
-            print(sequence)
 
     def generate_sequence_sample(self):
         if self.params.sample_size is not None:

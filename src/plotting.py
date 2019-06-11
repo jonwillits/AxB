@@ -74,7 +74,72 @@ def plot_pp_vs_x_cat_size(pps_at_end, x, num_reps, ylabel_prefix, figsize=(8, 8)
     plt.show()
 
 
-def plot_grid_search_results(time_stamp, pp_name, name2dist2pp_mat, name2dist2pp_start, seq_names,
+def plot_grid_search_results_marcus(time_stamp, pp_name, name2cat2pp_mat, name2cat2pp_start, pattern,
+                                    seq_names, num_epochs, num_reps, ytick_labels, xtick_labels, ylabel, xlabel,
+                                    fontsize=16):
+    if len(seq_names) == 2:
+        height = 12
+    elif len(seq_names) == 3:
+        height = 18
+    else:
+        raise AttributeError('Invalid number of seq_names')
+    cats = ['A', 'B']
+    num_cats = len(cats)
+    # fig
+    fig = plt.figure(1, figsize=(26, height))
+    gs1 = gridspec.GridSpec(len(seq_names), num_cats)
+    axarr = [fig.add_subplot(ss) for ss in gs1]
+    for ax, (seq_name, cat) in zip(axarr, product(seq_names, cats)):
+        ax.set_title('sequence_name="{}" cat="{}"'.format(seq_name, cat), fontsize=fontsize)
+        ax.set_ylabel(ylabel, fontsize=fontsize)
+        ax.set_xlabel(xlabel, fontsize=fontsize)
+        # heatmap
+        mat = name2cat2pp_mat[seq_name][cat]
+        if np.count_nonzero(mat) == 0:
+            ax.set_axis_off()
+        else:
+            vmax = name2cat2pp_start[seq_name][cat]
+            vmin = 1.0
+            im = ax.imshow(mat,
+                           aspect='auto',
+                           cmap='gray',
+                           interpolation='nearest',
+                           vmin=vmin, vmax=vmax)
+            # label each element
+            text_colors = ['black', 'white']
+            half_range = (vmax - vmin) / 2
+            threshold = im.norm(half_range + vmin)  # threshold below which label is white (instead of black)
+            valfmt = ticker.StrMethodFormatter("{x:.4f}")
+            for i in range(mat.shape[0]):
+                for j in range(mat.shape[1]):
+                    is_below = im.norm(mat[i, j]) < threshold
+                    color = text_colors[int(is_below)]
+                    im.axes.text(j, i, valfmt(mat[i, j], None),
+                                 fontsize=fontsize,
+                                 horizontalalignment="center",
+                                 verticalalignment="center",
+                                 color=color)
+        # xticks
+        num_cols = len(mat.T)
+        ax.set_xticks(np.arange(num_cols))
+        ax.xaxis.set_ticklabels(xtick_labels, rotation=0, fontsize=fontsize)
+        # yticks
+        num_rows = len(mat)
+        ax.set_yticks(np.arange(num_rows))
+        ax.yaxis.set_ticklabels(ytick_labels,  # no need to reverse (because no extent is set)
+                                rotation=0, fontsize=fontsize)
+        # remove ticklines
+        lines = (ax.xaxis.get_ticklines() +
+                 ax.yaxis.get_ticklines())
+        plt.setp(lines, visible=False)
+    #
+    fig.suptitle('{}-Perplexity\npattern="{}"\nepoch={}\nn={}\n{}'.format(
+        pp_name, pattern, num_epochs, num_reps, time_stamp), fontsize=fontsize)
+    gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
+    plt.show()
+
+
+def plot_grid_search_results(time_stamp, cat, pp_name, name2dist2pp_mat, name2dist2pp_start, seq_names,
                              num_epochs, num_reps, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
     if len(seq_names) == 2:
         height = 12
@@ -131,8 +196,8 @@ def plot_grid_search_results(time_stamp, pp_name, name2dist2pp_mat, name2dist2pp
                  ax.yaxis.get_ticklines())
         plt.setp(lines, visible=False)
     #
-    fig.suptitle('{}-Perplexity for "B"\nepoch={}\nn={}\n{}'.format(
-        pp_name, num_epochs, num_reps, time_stamp), fontsize=fontsize)
+    fig.suptitle('{}-Perplexity for "{}"\nepoch={}\nn={}\n{}'.format(
+        pp_name, cat, num_epochs, num_reps, time_stamp), fontsize=fontsize)
     gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
     plt.show()
 

@@ -17,16 +17,19 @@ def make_name2seqs(master_vocab, train_corpus, test_corpus=None):
     return res
 
 
-def train_loop(srn, name2seqs, master_vocab):
+def train_loop(srn, name2seqs, master_vocab, eval_a=True):
     # init
     train_seqs = name2seqs['train']
     seq_names = name2seqs.keys()
-    distances = np.arange(1, config.Eval.max_distance + 1)
-    name2dist2cat_pps = {name: {dist: [] for dist in distances} for name in seq_names}
-    name2dist2item_pps = {name: {dist: [] for dist in distances} for name in seq_names}
+    distances = np.arange(config.Eval.max_distance + 1)  # include distance=0
+    # each results object is a tuple: (name2dist2cat_pps, name2dist2item_pps)
+    cat2results = {cat: ({name: {dist: [] for dist in distances} for name in seq_names},
+                         {name: {dist: [] for dist in distances} for name in seq_names})
+                   for cat in ['A', 'B']}
     # calc seqs_pp + item_pp + cat_pp before training
     seqs_pp = srn.train_epoch(train_seqs, train=False)  # evaluate seqs_pp before training
-    calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps)
+    calc_pps(srn, master_vocab, name2seqs, 'A', *cat2results['A']) if eval_a else None  # not necessary for AxB
+    calc_pps(srn, master_vocab, name2seqs, 'B', *cat2results['B'])
     # train + eval loop
     for epoch in range(srn.params.num_epochs):
         # train
@@ -34,5 +37,6 @@ def train_loop(srn, name2seqs, master_vocab):
             print('seqs_pp={}'.format(seqs_pp))
         seqs_pp = srn.train_epoch(train_seqs, train=True)
         # eval
-        calc_pps(srn, master_vocab, name2seqs, name2dist2cat_pps, name2dist2item_pps)
-    return name2dist2cat_pps, name2dist2item_pps
+        calc_pps(srn, master_vocab, name2seqs, 'A', *cat2results['A']) if eval_a else None  # not necessary for AxB
+        calc_pps(srn, master_vocab, name2seqs, 'B', *cat2results['B'])
+    return cat2results

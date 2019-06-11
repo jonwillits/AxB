@@ -18,7 +18,8 @@ class Marcus:
     pattern = 'abb'  # chose from ['abb', 'aab', 'aba']
     train_ab_cat_size = 3
     test_ab_cat_size = 6
-    punctuation = False
+    punctuation_at_start = True  # punctuation is at start of sequence
+    punctuation = False  # punctuation is at end of sequence
     sample_size = None  # if None, full set is used, else sample from full set
 
 
@@ -29,7 +30,7 @@ class Axb:
     test_x_cat_size = 6
     min_distance = 1
     max_distance = 2
-    punctuation = False
+    punctuation = False   # punctuation is at end of sequence
     sample_size = None  # if None, full set is used, else sample from full set
 
 
