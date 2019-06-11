@@ -2,7 +2,7 @@
 
 class Verbosity:
     summary = False
-    cat_pp = True
+    cat_pp = False
     item_pp = False
     seqs_pp = False
 

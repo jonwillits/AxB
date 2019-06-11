@@ -19,9 +19,9 @@ PARAMS1_NAME = 'learning_rate'
 PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
-MAX_NUM_EPOCHS = 1
+MAX_NUM_EPOCHS = 10
 PLOT_SEQ_NAMES = ['train', 'test']  # test = novel
-NUM_REPS = 1
+NUM_REPS = 10
 PROGRESS_BAR = True
 SHOW_PLOTS = True
 

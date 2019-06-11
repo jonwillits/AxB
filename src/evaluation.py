@@ -99,18 +99,13 @@ def update_cat_and_item_pps(srn, master_vocab, name2seqs, cat, distances, result
         all_logits = srn.calc_logits(seqs)
         all_probs = softmax(all_logits, axis=1)
 
-        if distances is None:  # Marcus corpus
+        if distances is None:  # marcus corpus
             # filter by category
-
-            # TODO this doesn't work with marcus because cats are same in train and test
-
+            # in marcus corpus, A and B are categories
+            # but they don't represent a set of items, but a position in the sequence
+            # thus, for evaluation purpose, A-train and A-test (same for B) must be considered different categories
             is_cat_bools = [True if item.startswith(cat) and item.endswith(seq_name) else False
                             for item in master_vocab.items]
-
-            # TODO debug
-            print(is_cat_bools)
-            print(master_vocab.items)  # TODO debug
-
             filtered_probs = all_probs[:, is_cat_bools]
             filtered_logits = all_logits[:, is_cat_bools]
             filtered_onehots = all_onehots[:, is_cat_bools]
@@ -122,7 +117,7 @@ def update_cat_and_item_pps(srn, master_vocab, name2seqs, cat, distances, result
             results[0][seq_name].append(cat_pp)
             results[1][seq_name].append(item_pp)
 
-        else:  # AxB corpus
+        else:  # axb corpus
             for dist in distances:
                 # filter by distance & category
                 is_dist_bools = make_is_dist_bools(srn, master_vocab, seqs, dist)
