@@ -9,12 +9,18 @@ def make_name2seqs(master_vocab, train_corpus, test_corpus=None):
     train_seqs = master_vocab.generate_index_sequences(train_corpus)
     test_seqs = master_vocab.generate_index_sequences(test_corpus)
     novel_seqs = [seq for seq in test_seqs if seq not in train_seqs] or test_seqs
-    if config.Eval.skip_novel:
+    #
+    if config.Eval.skip_seq_name == 'novel':
         res = {name: seqs for name, seqs in zip(('train', 'test'),
                                                 (train_seqs, test_seqs))}
-    else:
+    elif config.Eval.skip_seq_name == 'test':
+        res = {name: seqs for name, seqs in zip(('train', 'novel'),
+                                                (train_seqs, novel_seqs))}
+    elif config.Eval.skip_seq_name is None:
         res = {name: seqs for name, seqs in zip(('train', 'test', 'novel'),
                                                 (train_seqs, test_seqs, novel_seqs))}
+    else:
+        raise AttributeError('Invalid arg to "skip_seq_name".')
     return SortedDict(res)
 
 

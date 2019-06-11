@@ -2,21 +2,21 @@
 
 class Verbosity:
     summary = False
-    cat_pp = False
+    cat_pp = True
     item_pp = False
     seqs_pp = False
 
 
 class Eval:
     max_distance = 3  # for 'test' sequences
-    skip_novel = True
+    skip_seq_name = None
 
 
 class Marcus:
     # the basic parameters of the Marcus corpus
     pattern = 'abb'  # chose from ['abb', 'aab', 'aba']
     ab_cat_size = 3
-    punctuation_at_start = True  # punctuation is at start of sequence
+    punctuation_at_start = False  # punctuation is at start of sequence
     punctuation = False  # punctuation is at end of sequence
     sample_size = None  # if None, full set is used, else sample from full set
 

@@ -4,9 +4,6 @@ class Vocab:
         self.corpus_list = [corpus for corpus in corpus_list]
         self.items = self.make_items()
         self.item2id = {item: n for n, item in enumerate(self.items)}
-        #
-        assert 'B1' == self.items[0]  # item-perplexity evaluation assumes B items come first in output
-        assert self.item2id['B1'] == 0
 
         self.item2id['PAD'] = len(self.items)
         self.items.append('PAD')

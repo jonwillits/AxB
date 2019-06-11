@@ -6,7 +6,7 @@ from src import config
 class MarcusCorpus:
     def __init__(self, params, test):
         self.params = params
-        self.item_suffix = 'test' if test else ''
+        self.item_suffix = 'test' if test else 'train'
         print('Initializing {} Marcus corpus'.format('test' if test else 'train'))
         #
         self.sequence_population = []
@@ -31,7 +31,7 @@ class MarcusCorpus:
         
         vocab_counter = 0
 
-        for i in range(self.params.ab_cat_size):  # B must come first because b_probs are assumed to be first in output
+        for i in range(self.params.ab_cat_size):
             b = "B" + str(i + 1) + self.item_suffix
             self.b_items.append(b)
             self.items.append(b)
@@ -111,7 +111,7 @@ class AxbCorpus:
 
         vocab_counter = 0
 
-        for i in range(self.params.ab_cat_size):  # B must come first because b_probs are assumed to be first in output
+        for i in range(self.params.ab_cat_size):
             b = "B" + str(i + 1)
             self.b_items.append(b)
             self.items.append(b)

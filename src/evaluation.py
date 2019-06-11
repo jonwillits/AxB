@@ -88,10 +88,10 @@ def calc_item_pp(filtered_logits, filtered_onehots):
     return item_pp
 
 
-def update_cat_and_item_pps(srn, master_vocab, name2seqs, cat, distances, results):  # TODO adapt to marcus
+def update_cat_and_item_pps(srn, master_vocab, name2seqs, cat, distances, results):
     for seq_name, seqs in name2seqs.items():
         if config.Verbosity.cat_pp or config.Verbosity.item_pp:
-            print('Evaluating perplexity for "{}" on "{}" sequences'.format(cat, seq_name))
+            print('Evaluating perplexity for "{}" on "{}" sequences with distances={}'.format(cat, seq_name, distances))
 
         # logits and softmax probabilities - calculate once only, and then filter by distance
         x, all_y = srn.to_x_and_y(seqs)
@@ -101,7 +101,16 @@ def update_cat_and_item_pps(srn, master_vocab, name2seqs, cat, distances, result
 
         if distances is None:  # Marcus corpus
             # filter by category
-            is_cat_bools = [True if item.startswith(cat) else False for item in master_vocab.items]
+
+            # TODO this doesn't work with marcus because cats are same in train and test
+
+            is_cat_bools = [True if item.startswith(cat) and item.endswith(seq_name) else False
+                            for item in master_vocab.items]
+
+            # TODO debug
+            print(is_cat_bools)
+            print(master_vocab.items)  # TODO debug
+
             filtered_probs = all_probs[:, is_cat_bools]
             filtered_logits = all_logits[:, is_cat_bools]
             filtered_onehots = all_onehots[:, is_cat_bools]

@@ -20,12 +20,12 @@ PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
 MAX_NUM_EPOCHS = 1
-PLOT_SEQ_NAMES = ['train', 'novel']
+PLOT_SEQ_NAMES = ['train', 'test']  # test = novel
 NUM_REPS = 1
 PROGRESS_BAR = True
 SHOW_PLOTS = True
 
-config.Eval.skip_novel = False  # evaluate on 'novel' sequences only (only unseen sequences)
+config.Eval.skip_seq_name = 'novel'  # # test = novel
 
 # params
 input_params = config.Marcus  # cannot be copied
@@ -34,6 +34,8 @@ rnn_params = config.RNN  # cannot be copied
 # set bptt
 setattr(rnn_params, 'bptt', int(input_params.punctuation) + int(input_params.punctuation_at_start) + 2)  # TODO test
 print('Set bptt to {}'.format(rnn_params.bptt))
+
+cats = ['A', 'B']
 
 # do for each marcus corpus pattern
 for pattern in PATTERNS:
@@ -53,7 +55,6 @@ for pattern in PATTERNS:
     seq_names = name2seqs.keys()
 
     # init result data structures
-    cats = ['A', 'B']
     name2cat2item_pp_mat = {seq_name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in cats}
                             for seq_name in seq_names}
     name2cat2cat_pp_mat = {seq_name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in cats}
@@ -105,11 +106,12 @@ for pattern in PATTERNS:
         setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
         setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
         plot_params(time_stamp, input_params, rnn_params)
-        plot_grid_search_results_marcus(time_stamp, 'Item', name2cat2item_pp_mat, name2cat2item_pp_start, pattern,
-                                        PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
-                                        PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
         plot_grid_search_results_marcus(time_stamp, 'Category', name2cat2cat_pp_mat, name2cat2cat_pp_start, pattern,
                                         PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
                                         PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+        plot_grid_search_results_marcus(time_stamp, 'Item', name2cat2item_pp_mat, name2cat2item_pp_start, pattern,
+                                        PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
+                                        PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+
 
 
