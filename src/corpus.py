@@ -32,7 +32,7 @@ class MarcusCorpus:
         
         vocab_counter = 0
 
-        for i in range(self.params.ab_cat_size):  # B must come first because b_probs are assumed to be first in output
+        for i in range(self.ab_cat_size):  # B must come first because b_probs are assumed to be first in output
             b = "B" + str(i + 1)
             self.b_items.append(b)
             self.items.append(b)
@@ -41,7 +41,7 @@ class MarcusCorpus:
             self.cat2items['B'].append(b)
             vocab_counter += 1
 
-        for i in range(self.params.ab_cat_size):
+        for i in range(self.ab_cat_size):
             a = "A" + str(i + 1)
             self.a_items.append(a)
             self.items.append(a)

@@ -16,7 +16,7 @@ class Eval:
 class Marcus:
     # the basic parameters of the Marcus corpus
     pattern = 'abb'  # chose from ['abb', 'aab', 'aba']
-    train_ab_cat_size = 6
+    train_ab_cat_size = 3
     test_ab_cat_size = 6
     punctuation = False
     sample_size = None  # if None, full set is used, else sample from full set
