@@ -12,7 +12,7 @@ from src import config
 
 
 # params
-input_params = copy(config.Input)
+input_params = copy(config.Axb)
 rnn_params = copy(config.RNN)
 setattr(rnn_params, 'learning_rate', 0.25)
 

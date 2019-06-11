@@ -13,7 +13,7 @@ from src import config
 
 
 # params
-input_params = copy(config.Input)
+input_params = copy(config.Axb)
 rnn_params = copy(config.RNN)
 print_params(rnn_params)
 

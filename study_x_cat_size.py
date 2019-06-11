@@ -17,14 +17,14 @@ from src import config
 # TODO plot multiple lines in same figure, one for each iteration
 
 TRAIN_DISTANCE = 1
-TRAIN_X_CAT_SIZES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+TRAIN_X_CAT_SIZES = [1] + list(np.linspace(2, 24, 12).astype(np.int))
 NUM_REPS = 100
 PROGRESS_BAR = True
 MAX_NUM_SEQUENCES = 72  # 72 is the total number of sequences in corpus with x_cat_size=24 and ab_cat_size=1
-NUM_ITERATIONS = 3  # number of times each sequence will be heard (on average), Gomez, 2002 used 6
+NUM_ITERATIONS = 1  # number of times each sequence will be heard (on average), Gomez, 2002 used 6
 
 # params
-input_params = config.Input  # cannot be copied
+input_params = config.Axb  # cannot be copied
 rnn_params = config.RNN  # cannot be copied
 
 # modify rnn_params

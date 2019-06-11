@@ -13,7 +13,16 @@ class Eval:
     skip_novel = True
 
 
-class Input:
+class Marcus:
+    # the basic parameters of the Marcus corpus
+    pattern = 'abb'  # chose from ['abb', 'aab', 'aba']
+    train_ab_cat_size = 6
+    test_ab_cat_size = 6
+    punctuation = False
+    sample_size = None  # if None, full set is used, else sample from full set
+
+
+class Axb:
     # the basic parameters of the AxB grammar
     ab_cat_size = 2
     train_x_cat_size = 6
