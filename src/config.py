@@ -1,7 +1,6 @@
 
 
 class Verbosity:
-    softmax = True
     summary = False
     cat_pp = False
     item_pp = False
@@ -16,8 +15,7 @@ class Eval:
 class Marcus:
     # the basic parameters of the Marcus corpus
     pattern = 'abb'  # chose from ['abb', 'aab', 'aba']
-    train_ab_cat_size = 3
-    test_ab_cat_size = 6
+    ab_cat_size = 3
     punctuation_at_start = True  # punctuation is at start of sequence
     punctuation = False  # punctuation is at end of sequence
     sample_size = None  # if None, full set is used, else sample from full set

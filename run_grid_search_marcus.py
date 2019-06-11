@@ -14,28 +14,29 @@ from src.vocab import Vocab
 from src.rnn import RNN
 from src import config
 
+PATTERNS = ['aab'] or ['abb', 'aab', 'aba']
 PARAMS1_NAME = 'learning_rate'
-PARAMS1 = [0.25] or [0.1, 0.25, 0.5, 0.75, 1.0]
+PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
-PARAMS2 = [8] or [2, 4, 6, 8]
-MAX_NUM_EPOCHS = 100
+PARAMS2 = [2, 4, 6, 8]
+MAX_NUM_EPOCHS = 1
 PLOT_SEQ_NAMES = ['train', 'novel']
 NUM_REPS = 1
 PROGRESS_BAR = True
+SHOW_PLOTS = True
 
 config.Eval.skip_novel = False  # evaluate on 'novel' sequences only (only unseen sequences)
-config.Eval.max_distance = 1  # TODO what are the consequences of this?
 
 # params
 input_params = config.Marcus  # cannot be copied
 rnn_params = config.RNN  # cannot be copied
 
 # set bptt
-setattr(rnn_params, 'bptt', int(input_params.punctuation) * 2 + 2)  # TODO test
+setattr(rnn_params, 'bptt', int(input_params.punctuation) + int(input_params.punctuation_at_start) + 2)  # TODO test
 print('Set bptt to {}'.format(rnn_params.bptt))
 
 # do for each marcus corpus pattern
-for pattern in ['abb', 'aab', 'aba']:
+for pattern in PATTERNS:
 
     # progressbar
     print('Grid search with pattern={}'.format(pattern))
@@ -83,9 +84,9 @@ for pattern in ['abb', 'aab', 'aba']:
 
                 # populate result data structures
                 for seq_name, cat in product(seq_names, cats):
-                    name2dist2cat_pps, name2dist2item_pps = cat2results[cat]
-                    cat_pps = name2dist2cat_pps[seq_name][1]
-                    item_pps = name2dist2item_pps[seq_name][1]  # TODO what the consequences of dist=1 here?
+                    name2cat_pps, name2item_pps = cat2results[cat]
+                    cat_pps = name2cat_pps[seq_name]
+                    item_pps = name2item_pps[seq_name]
                     if not item_pps or not cat_pps:
                         continue
                     # category-perplexity
@@ -98,16 +99,17 @@ for pattern in ['abb', 'aab', 'aba']:
             if PROGRESS_BAR:
                 pbar.update()
 
-    # plot heatmaps showing item or category perplexity for all hyper-parameter configurations
-    time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
-    setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
-    setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
-    plot_params(time_stamp, input_params, rnn_params)
-    plot_grid_search_results_marcus(time_stamp, 'Item', name2cat2item_pp_mat, name2cat2item_pp_start, pattern,
-                                    PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
-                                    PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
-    plot_grid_search_results_marcus(time_stamp, 'Category', name2cat2cat_pp_mat, name2cat2cat_pp_start, pattern,
-                                    PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
-                                    PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+    if SHOW_PLOTS:
+        # plot heatmaps showing item or category perplexity for all hyper-parameter configurations
+        time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
+        setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
+        setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
+        plot_params(time_stamp, input_params, rnn_params)
+        plot_grid_search_results_marcus(time_stamp, 'Item', name2cat2item_pp_mat, name2cat2item_pp_start, pattern,
+                                        PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
+                                        PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+        plot_grid_search_results_marcus(time_stamp, 'Category', name2cat2cat_pp_mat, name2cat2cat_pp_start, pattern,
+                                        PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
+                                        PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
 
 

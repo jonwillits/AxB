@@ -1,6 +1,7 @@
 import numpy as np
+from sortedcontainers import SortedDict
 
-from src.evaluation import calc_pps
+from src.evaluation import update_cat_and_item_pps
 from src import config
 
 
@@ -14,22 +15,27 @@ def make_name2seqs(master_vocab, train_corpus, test_corpus=None):
     else:
         res = {name: seqs for name, seqs in zip(('train', 'test', 'novel'),
                                                 (train_seqs, test_seqs, novel_seqs))}
-    return res
+    return SortedDict(res)
 
 
-def train_loop(srn, name2seqs, master_vocab, eval_a=True):
+def train_loop(srn, name2seqs, master_vocab, distances=None, eval_a=True):
     # init
     train_seqs = name2seqs['train']
     seq_names = name2seqs.keys()
-    distances = np.arange(config.Eval.max_distance + 1)  # include distance=0
-    # each results object is a tuple: (name2dist2cat_pps, name2dist2item_pps)
-    cat2results = {cat: ({name: {dist: [] for dist in distances} for name in seq_names},
-                         {name: {dist: [] for dist in distances} for name in seq_names})
-                   for cat in ['A', 'B']}
+    if distances is not None:  # training on AxB
+        # each results object is a tuple: (name2dist2cat_pps, name2dist2item_pps)
+        cat2results = {cat: ({name: {dist: [] for dist in distances} for name in seq_names},
+                             {name: {dist: [] for dist in distances} for name in seq_names})
+                       for cat in ['A', 'B']}
+    else:   # training on Marcus
+        # each results object is a tuple: (name2cat_pps, name2item_pps)
+        cat2results = {cat: ({name: [] for name in seq_names},
+                             {name: [] for name in seq_names})
+                       for cat in ['A', 'B']}
     # calc seqs_pp + item_pp + cat_pp before training
     seqs_pp = srn.train_epoch(train_seqs, train=False)  # evaluate seqs_pp before training
-    calc_pps(srn, master_vocab, name2seqs, 'A', *cat2results['A']) if eval_a else None  # not necessary for AxB
-    calc_pps(srn, master_vocab, name2seqs, 'B', *cat2results['B'])
+    update_cat_and_item_pps(srn, master_vocab, name2seqs, 'A', distances, cat2results['A']) if eval_a else None
+    update_cat_and_item_pps(srn, master_vocab, name2seqs, 'B', distances, cat2results['B'])
     # train + eval loop
     for epoch in range(srn.params.num_epochs):
         # train
@@ -37,6 +43,6 @@ def train_loop(srn, name2seqs, master_vocab, eval_a=True):
             print('seqs_pp={}'.format(seqs_pp))
         seqs_pp = srn.train_epoch(train_seqs, train=True)
         # eval
-        calc_pps(srn, master_vocab, name2seqs, 'A', *cat2results['A']) if eval_a else None  # not necessary for AxB
-        calc_pps(srn, master_vocab, name2seqs, 'B', *cat2results['B'])
+        update_cat_and_item_pps(srn, master_vocab, name2seqs, 'A', distances, cat2results['A']) if eval_a else None
+        update_cat_and_item_pps(srn, master_vocab, name2seqs, 'B', distances, cat2results['B'])
     return cat2results

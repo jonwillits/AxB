@@ -6,9 +6,8 @@ from src import config
 class MarcusCorpus:
     def __init__(self, params, test):
         self.params = params
-        self.ab_cat_size = params.test_ab_cat_size if test else params.train_ab_cat_size
-        print('Initializing {} Marcus corpus with ab_cat_size={}'.format(
-            'test' if test else 'train', self.ab_cat_size))
+        self.item_suffix = 'test' if test else ''
+        print('Initializing {} Marcus corpus'.format('test' if test else 'train'))
         #
         self.sequence_population = []
         self.sequence_sample = []
@@ -32,8 +31,8 @@ class MarcusCorpus:
         
         vocab_counter = 0
 
-        for i in range(self.ab_cat_size):  # B must come first because b_probs are assumed to be first in output
-            b = "B" + str(i + 1)
+        for i in range(self.params.ab_cat_size):  # B must come first because b_probs are assumed to be first in output
+            b = "B" + str(i + 1) + self.item_suffix
             self.b_items.append(b)
             self.items.append(b)
             self.item2id[b] = vocab_counter
@@ -41,8 +40,8 @@ class MarcusCorpus:
             self.cat2items['B'].append(b)
             vocab_counter += 1
 
-        for i in range(self.ab_cat_size):
-            a = "A" + str(i + 1)
+        for i in range(self.params.ab_cat_size):
+            a = "A" + str(i + 1) + self.item_suffix
             self.a_items.append(a)
             self.items.append(a)
             self.item2id[a] = vocab_counter
@@ -52,8 +51,8 @@ class MarcusCorpus:
 
     def generate_sequence_population(self):
 
-        for i in range(self.ab_cat_size):
-            for j in range(self.ab_cat_size):
+        for i in range(self.params.ab_cat_size):
+            for j in range(self.params.ab_cat_size):
                 if self.params.pattern == 'abb':
                     sequence = [self.a_items[i], self.b_items[j], self.b_items[j]]
                 elif self.params.pattern == 'aab':

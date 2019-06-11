@@ -16,12 +16,13 @@ from src.rnn import RNN
 from src import config
 
 PARAMS1_NAME = 'learning_rate'
-PARAMS1 = [0.25] or [0.1, 0.25, 0.5, 0.75, 1.0]
+PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
-PARAMS2 = [8] or [2, 4, 6, 8]
+PARAMS2 = [2, 4, 6, 8]
 TRAIN_DISTANCES = [[0, 1]]
+MAX_EVAL_DISTANCE = 3
 TRAIN_X_SET_SIZES = [2, 4, 6]
-MAX_NUM_EPOCHS = 100
+MAX_NUM_EPOCHS = 10
 PLOT_SEQ_NAMES = ['train', 'test']
 NUM_REPS = 1
 PROGRESS_BAR = True
@@ -35,6 +36,8 @@ rnn_params = config.RNN  # cannot be copied
 # set bptt such that it is possible to learn dependencies across largest distance
 setattr(rnn_params, 'bptt', config.Eval.max_distance + 1)
 print('Set bptt to {}'.format(rnn_params.bptt))
+
+distances = np.arange(config.Eval.max_distance + 1)
 
 # do for each distance setting
 for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZES):
@@ -60,7 +63,6 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
     seq_names = name2seqs.keys()
 
     # init result data structures
-    distances = np.arange(1, config.Eval.max_distance + 1)
     name2dist2item_pp_mat = {seq_name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
                              for seq_name in seq_names}
     name2dist2cat_pp_mat = {seq_name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
@@ -87,7 +89,7 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
 
                 # train + evaluate
                 rnn = RNN(master_vocab, rnn_params)
-                cat2results = train_loop(rnn, name2seqs, master_vocab)
+                cat2results = train_loop(rnn, name2seqs, master_vocab, distances, eval_a=False)
                 name2dist2cat_pps, name2dist2item_pps = cat2results['B']
 
                 # check item-perplexity against theory
