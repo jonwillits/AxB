@@ -4,10 +4,11 @@ from scipy.special import softmax
 from src import config
 
 
-def check_item_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2item_pps):
+def check_b_item_pp_at_end(srn, input_params, master_vocab, corpus2results):
     # calculate theoretical maximum and minimum perplexity
-    # "B" item perplexity should converge on 1.0, even with variable size distance
-    for seq_name, seqs in name2seqs.items():
+    # "B" item perplexity should converge on 1.0, even with variable size distance (for AxB corpus)
+    for corpus in master_vocab.corpora:
+        seqs = master_vocab.generate_index_sequences(corpus)
         distances = np.arange(1, config.Eval.max_distance + 1)
         for dist in distances:
 
@@ -24,12 +25,12 @@ def check_item_pp_at_end(srn, input_params, master_vocab, name2seqs, name2dist2i
             min_b_item_pp = np.exp(-np.log(1 / 1) * num_b_windows / num_windows)
 
             #
-            b_item_pp_at_start = name2dist2item_pps[seq_name][dist][0]
-            b_item_pp_at_end = name2dist2item_pps[seq_name][dist][-1]
+            b_item_pp_at_start = name2dist2item_pps[corpus.name][dist][0]
+            b_item_pp_at_end = name2dist2item_pps[corpus.name][dist][-1]
 
             # console
             print('-------------')
-            print('distance={} seq_name={}'.format(dist, seq_name))
+            print('distance={} corpus.name={}'.format(dist, corpus.name))
             print('-------------')
             print('num_b_windows', num_b_windows)
             print('num_windows', num_windows)
@@ -88,56 +89,51 @@ def calc_item_pp(filtered_logits, filtered_onehots):
     return item_pp
 
 
-def update_cat_and_item_pps(srn, master_vocab, name2seqs, cat, distances, results):
-    for seq_name, seqs in name2seqs.items():
-        if config.Verbosity.cat_pp or config.Verbosity.item_pp:
-            print('Evaluating perplexity for "{}" on "{}" sequences with distances={}'.format(cat, seq_name, distances))
+def update_cat_and_item_pps(srn, master_vocab, distances, corpus2results):
+    for corpus in master_vocab.corpora:
 
-        # logits and softmax probabilities - calculate once only, and then filter by distance
-        x, all_y = srn.to_x_and_y(seqs)
-        all_onehots = np.eye(master_vocab.num_items)[all_y]
-        all_logits = srn.calc_logits(seqs)
-        all_probs = softmax(all_logits, axis=1)
+        seqs = master_vocab.generate_index_sequences(corpus)
 
-        if distances is None:  # marcus corpus
+        for cat in corpus.cats:
+
+            # logits and softmax probabilities - calculate once only, and then filter by distance
+            x, all_y = srn.to_x_and_y(seqs)
+            all_onehots = np.eye(master_vocab.num_items)[all_y]
+            all_logits = srn.calc_logits(seqs)
+            all_probs = softmax(all_logits, axis=1)
+
             # filter by category
-            # in marcus corpus, A and B are categories
-            # but they don't represent a set of items, but a position in the sequence
-            # thus, for evaluation purpose, A-train and A-test (same for B) must be considered different categories
-            is_cat_bools = [True if item.startswith(cat) and item.endswith(seq_name) else False
-                            for item in master_vocab.items]
-            filtered_probs = all_probs[:, is_cat_bools]
-            filtered_logits = all_logits[:, is_cat_bools]
-            filtered_onehots = all_onehots[:, is_cat_bools]
-            filtered_y = all_y
-            # compute
-            cat_pp = calc_cat_pp(master_vocab, cat, filtered_probs, filtered_y)
-            item_pp = calc_item_pp(filtered_logits, filtered_onehots)
-            # collect
-            results[0][seq_name].append(cat_pp)
-            results[1][seq_name].append(item_pp)
+            is_cat_bools = [True if item.startswith(cat) else False for item in master_vocab.items]
+            cat_probs = all_probs[:, is_cat_bools]
+            cat_logits = all_logits[:, is_cat_bools]
+            cat_onehots = all_onehots[:, is_cat_bools]
+            cat_y = all_y
 
-        else:  # axb corpus
-            for dist in distances:
-                # filter by distance & category
-                is_dist_bools = make_is_dist_bools(srn, master_vocab, seqs, dist)
-                if not np.any(is_dist_bools):
-                    print('Did not find sequences with distance={}. Skipping'.format(dist))
-                    continue
-                is_cat_bools = [True if item.startswith(cat) else False for item in master_vocab.items]
-                filtered_probs = all_probs[is_dist_bools][:, is_cat_bools]
-                filtered_logits = all_logits[is_dist_bools][:, is_cat_bools]
-                filtered_onehots = all_onehots[is_dist_bools][:, is_cat_bools]
-                filtered_y = all_y[is_dist_bools]
+            if config.Verbosity.cat_pp or config.Verbosity.item_pp:
+                print('Evaluating perplexity for "{}" on "{}" sequences with distances={}'.format(
+                    cat, corpus.name, distances))
+
+            # pos_y is a list with integers representing the position of the item that is predicted
+            pos_seqs = [list(range(len(seq))) for seq in seqs]
+            pos_x, pos_y = srn.to_x_and_y(pos_seqs)
+            for pos in corpus.positions:
+
+                # filter by position
+                is_pos_bools = [True if pos_yi == pos else False for pos_yi in pos_y]
+                pos_cat_probs = cat_probs[is_pos_bools]
+                pos_cat_logits = cat_logits[is_pos_bools]
+                pos_cat_onehots = cat_onehots[is_pos_bools]
+                pos_cat_y = cat_y[is_pos_bools]
+
                 # compute
-                cat_pp = calc_cat_pp(master_vocab, cat, filtered_probs, filtered_y)
-                item_pp = calc_item_pp(filtered_logits, filtered_onehots)
+                cat_pp = calc_cat_pp(master_vocab, cat, pos_cat_probs, pos_cat_y)
+                item_pp = calc_item_pp(pos_cat_logits, pos_cat_onehots)
                 # collect
-                results[0][seq_name][dist].append(cat_pp)
-                results[1][seq_name][dist].append(item_pp)
+                corpus2results[corpus.name][cat][pos]['cat_pp'].append(cat_pp)
+                corpus2results[corpus.name][cat][pos]['item_pp'].append(item_pp)
 
-    if config.Verbosity.cat_pp or config.Verbosity.item_pp:
-        print('------------------------------------------------------------')
+        if config.Verbosity.cat_pp or config.Verbosity.item_pp:
+            print('------------------------------------------------------------')
 
 
 def calc_cross_entropy(predictions, targets, epsilon=1e-12):

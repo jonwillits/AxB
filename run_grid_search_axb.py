@@ -4,12 +4,11 @@ import sys
 import pyprind
 from itertools import product
 
-from src.evaluation import check_item_pp_at_end
+from src.evaluation import check_b_item_pp_at_end
 from src.utils import print_params
 from src.plotting import plot_grid_search_results
 from src.plotting import plot_params
 from src.jobs import train_loop
-from src.jobs import make_name2seqs
 from src.corpus import AxbCorpus
 from src.vocab import Vocab
 from src.rnn import RNN
@@ -23,7 +22,6 @@ TRAIN_DISTANCES = [[0, 1]]
 MAX_EVAL_DISTANCE = 3
 TRAIN_X_SET_SIZES = [2, 4, 6]
 MAX_NUM_EPOCHS = 10
-PLOT_SEQ_NAMES = ['train', 'test']
 NUM_REPS = 1
 PROGRESS_BAR = True
 LIMIT_BPPT = False  # if True, generalization to unseen distances is impossible
@@ -56,21 +54,19 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
         print('Set bptt to {}'.format(rnn_params.bptt))
 
     # make train and test sequences
-    train_corpus = AxbCorpus(input_params, test=False)
-    test_corpus = AxbCorpus(input_params,  test=True)
+    train_corpus = AxbCorpus(input_params, name='train')
+    test_corpus = AxbCorpus(input_params,  name='test')
     master_vocab = Vocab(train_corpus, test_corpus)
-    name2seqs = make_name2seqs(master_vocab, train_corpus, test_corpus)
-    seq_names = name2seqs.keys()
 
     # init result data structures
-    name2dist2item_pp_mat = {seq_name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
-                             for seq_name in seq_names}
-    name2dist2cat_pp_mat = {seq_name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
-                            for seq_name in seq_names}
-    name2dist2item_pp_start = {seq_name: {dist: None for dist in distances}
-                               for seq_name in seq_names}
-    name2dist2cat_pp_start = {seq_name: {dist: None for dist in distances}
-                              for seq_name in seq_names}
+    name2dist2item_pp_mat = {corpus.name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
+                             for corpus in master_vocab.corpora}
+    name2dist2cat_pp_mat = {corpus.name: {dist: np.zeros((len(PARAMS1), len(PARAMS2))) for dist in distances}
+                            for corpus in master_vocab.corpora}
+    name2dist2item_pp_start = {corpus.name: {dist: None for dist in distances}
+                               for corpus in master_vocab.corpora}
+    name2dist2cat_pp_start = {corpus.name: {dist: None for dist in distances}
+                              for corpus in master_vocab.corpora}
 
     # grid search over rnn_params
     for i, param1 in enumerate(PARAMS1):
@@ -89,38 +85,42 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
 
                 # train + evaluate
                 rnn = RNN(master_vocab, rnn_params)
-                cat2results = train_loop(rnn, name2seqs, master_vocab, distances, eval_a=False)
-                name2dist2cat_pps, name2dist2item_pps = cat2results['B']
+                corpus2results = train_loop(rnn, master_vocab, distances)
 
                 # check item-perplexity against theory
                 if not PROGRESS_BAR:
-                    check_item_pp_at_end(
-                        rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
+                    check_b_item_pp_at_end(rnn, input_params, master_vocab, corpus2results)
 
                 # populate result data structures
-                for seq_name, dist in product(seq_names, distances):
-                    item_pps = name2dist2item_pps[seq_name][dist]
-                    cat_pps = name2dist2cat_pps[seq_name][dist]
-                    if not item_pps or not cat_pps:
-                        continue
-                    # category-perplexity
-                    name2dist2cat_pp_mat[seq_name][dist][i, j] += cat_pps[-1] / NUM_REPS
-                    name2dist2cat_pp_start[seq_name][dist] = cat_pps[0]
-                    # item-perplexity
-                    name2dist2item_pp_mat[seq_name][dist][i, j] += item_pps[-1] / NUM_REPS
-                    name2dist2item_pp_start[seq_name][dist] = item_pps[0]
+                for corpus in master_vocab.corpora:
+                    for pos in corpus.positions:
+                        dist = pos - 1  # e.g. B in A-x-B is in pos=2 and dist=1
+                        if dist < 0:  # impossible for AxB corpus
+                            continue
+                        #
+                        cat_pps = corpus2results[corpus.name]['B'][pos]['cat_pp']
+                        item_pps = corpus2results[corpus.name]['B'][pos]['item_pp']
+                        if not item_pps or not cat_pps:
+                            continue
+                        # category-perplexity
+                        name2dist2cat_pp_mat[corpus.name][dist][i, j] += cat_pps[-1] / NUM_REPS
+                        name2dist2cat_pp_start[corpus.name][dist] = cat_pps[0]
+                        # item-perplexity
+                        name2dist2item_pp_mat[corpus.name][dist][i, j] += item_pps[-1] / NUM_REPS
+                        name2dist2item_pp_start[corpus.name][dist] = item_pps[0]
 
             if PROGRESS_BAR:
                 pbar.update()
 
     # plot heatmaps showing item or category perplexity for al hyper-parameter configurations
     time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
+    seq_names = [corpus.name for corpus in master_vocab.corpora]
     setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
     setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
     plot_params(time_stamp, input_params, rnn_params)
-    plot_grid_search_results(time_stamp, 'B', 'Category', name2dist2cat_pp_mat, name2dist2cat_pp_start, PLOT_SEQ_NAMES,
+    plot_grid_search_results(time_stamp, 'B', 'Category', name2dist2cat_pp_mat, name2dist2cat_pp_start, seq_names,
                              MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
-    plot_grid_search_results(time_stamp, 'B', 'Item', name2dist2item_pp_mat, name2dist2item_pp_start, PLOT_SEQ_NAMES,
+    plot_grid_search_results(time_stamp, 'B', 'Item', name2dist2item_pp_mat, name2dist2item_pp_start, seq_names,
                              MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
 
 

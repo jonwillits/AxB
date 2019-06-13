@@ -3,7 +3,7 @@ import datetime
 import sys
 import pyprind
 
-from src.evaluation import check_item_pp_at_end
+from src.evaluation import check_b_item_pp_at_end
 from src.plotting import plot_pp_vs_x_cat_size
 from src.plotting import plot_params
 from src.jobs import train_loop
@@ -77,7 +77,7 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 
         # check item-perplexity against theory
         if not PROGRESS_BAR:
-            check_item_pp_at_end(
+            check_b_item_pp_at_end(
                 rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
 
         # populate result data structures

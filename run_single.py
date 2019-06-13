@@ -1,6 +1,6 @@
 from copy import copy
 
-from src.evaluation import check_item_pp_at_end
+from src.evaluation import check_b_item_pp_at_end
 from src.plotting import plot_cat_and_item_pps
 from src.utils import print_params
 from src.utils import calc_max_cat_pp
@@ -33,4 +33,4 @@ max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vo
 plot_cat_and_item_pps(name2dist2cat_pps, name2dist2item_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
 
 
-check_item_pp_at_end(rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
+check_b_item_pp_at_end(rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)

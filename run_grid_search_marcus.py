@@ -8,7 +8,6 @@ from src.utils import print_params
 from src.plotting import plot_grid_search_results_marcus
 from src.plotting import plot_params
 from src.jobs import train_loop
-from src.jobs import make_name2seqs
 from src.corpus import MarcusCorpus
 from src.vocab import Vocab
 from src.rnn import RNN
@@ -32,10 +31,8 @@ input_params = config.Marcus  # cannot be copied
 rnn_params = config.RNN  # cannot be copied
 
 # set bptt
-setattr(rnn_params, 'bptt', int(input_params.punctuation) + int(input_params.punctuation_at_start) + 2)  # TODO test
+setattr(rnn_params, 'bptt', int(input_params.punctuation) + int(input_params.punctuation_at_start) + 2)
 print('Set bptt to {}'.format(rnn_params.bptt))
-
-cats = ['A', 'B']
 
 # do for each marcus corpus pattern
 for pattern in PATTERNS:
@@ -48,21 +45,20 @@ for pattern in PATTERNS:
     setattr(input_params, 'pattern', pattern)
 
     # make train and test sequences
-    train_corpus = MarcusCorpus(input_params, test=False)
-    test_corpus = MarcusCorpus(input_params,  test=True)
+    train_corpus = MarcusCorpus(input_params, name='train')
+    test_corpus = MarcusCorpus(input_params,  name='test')
+    assert set(train_corpus.cats).isdisjoint(test_corpus.cats)
     master_vocab = Vocab(train_corpus, test_corpus)
-    name2seqs = make_name2seqs(master_vocab, train_corpus, test_corpus)
-    seq_names = name2seqs.keys()
 
     # init result data structures
-    name2cat2item_pp_mat = {seq_name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in cats}
-                            for seq_name in seq_names}
-    name2cat2cat_pp_mat = {seq_name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in cats}
-                           for seq_name in seq_names}
-    name2cat2item_pp_start = {seq_name: {cat: None for cat in cats}
-                              for seq_name in seq_names}
-    name2cat2cat_pp_start = {seq_name: {cat: None for cat in cats}
-                             for seq_name in seq_names}
+    name2cat2item_pp_mat = {corpus.name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in corpus.cats}
+                            for corpus in master_vocab.corpora}
+    name2cat2cat_pp_mat = {corpus.name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in corpus.cats}
+                           for corpus in master_vocab.corpora}
+    name2cat2item_pp_start = {corpus.name: {cat: None for cat in corpus.cats}
+                              for corpus in master_vocab.corpora}
+    name2cat2cat_pp_start = {corpus.name: {cat: None for cat in corpus.cats}
+                             for corpus in master_vocab.corpora}
 
     # grid search over rnn_params
     for i, param1 in enumerate(PARAMS1):
@@ -81,21 +77,22 @@ for pattern in PATTERNS:
 
                 # train + evaluate
                 rnn = RNN(master_vocab, rnn_params)
-                cat2results = train_loop(rnn, name2seqs, master_vocab)
+                cat2results = train_loop(rnn, master_vocab)
 
                 # populate result data structures
-                for seq_name, cat in product(seq_names, cats):
-                    name2cat_pps, name2item_pps = cat2results[cat]
-                    cat_pps = name2cat_pps[seq_name]
-                    item_pps = name2item_pps[seq_name]
-                    if not item_pps or not cat_pps:
-                        continue
-                    # category-perplexity
-                    name2cat2cat_pp_mat[seq_name][cat][i, j] += cat_pps[-1] / NUM_REPS
-                    name2cat2cat_pp_start[seq_name][cat] = cat_pps[0]
-                    # item-perplexity
-                    name2cat2item_pp_mat[seq_name][cat][i, j] += item_pps[-1] / NUM_REPS
-                    name2cat2item_pp_start[seq_name][cat] = item_pps[0]
+                for corpus in master_vocab.corpora:
+                    for cat in corpus.cats:
+                        name2cat_pps, name2item_pps = cat2results[cat]
+                        cat_pps = name2cat_pps[corpus.name]
+                        item_pps = name2item_pps[corpus.name]
+                        if not item_pps or not cat_pps:
+                            continue
+                        # category-perplexity
+                        name2cat2cat_pp_mat[corpus.name][cat][i, j] += cat_pps[-1] / NUM_REPS
+                        name2cat2cat_pp_start[corpus.name][cat] = cat_pps[0]
+                        # item-perplexity
+                        name2cat2item_pp_mat[corpus.name][cat][i, j] += item_pps[-1] / NUM_REPS
+                        name2cat2item_pp_start[corpus.name][cat] = item_pps[0]
 
             if PROGRESS_BAR:
                 pbar.update()

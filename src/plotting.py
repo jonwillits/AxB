@@ -141,16 +141,10 @@ def plot_grid_search_results_marcus(time_stamp, pp_name, name2cat2pp_mat, name2c
 
 def plot_grid_search_results(time_stamp, cat, pp_name, name2dist2pp_mat, name2dist2pp_start, seq_names,
                              num_epochs, num_reps, ytick_labels, xtick_labels, ylabel, xlabel, fontsize=16):
-    if len(seq_names) == 2:
-        height = 12
-    elif len(seq_names) == 3:
-        height = 18
-    else:
-        raise AttributeError('Invalid number of seq_names')
     distances = np.arange(1, config.Eval.max_distance + 1)
     # fig
-    fig = plt.figure(1, figsize=(26, height))
-    gs1 = gridspec.GridSpec(len(seq_names), config.Eval.max_distance)
+    fig = plt.figure(1, figsize=(26, 12))
+    gs1 = gridspec.GridSpec(2, config.Eval.max_distance)
     axarr = [fig.add_subplot(ss) for ss in gs1]
     for ax, (seq_name, dist) in zip(axarr, product(seq_names, distances)):
         ax.set_title('sequence_name="{}" distance={}'.format(seq_name, dist), fontsize=fontsize)
