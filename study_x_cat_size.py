@@ -53,10 +53,8 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
     setattr(input_params, 'train_x_cat_size', train_x_cat_size)
 
     # make train but not test sequences
-    train_corpus = AxbCorpus(input_params, test=False)
-    master_vocab = Vocab(train_corpus)
-    name2seqs = {'train': master_vocab.generate_index_sequences(train_corpus)}
-    seq_names = name2seqs.keys()
+    train_corpus = AxbCorpus(input_params, name='train')
+    master_vocab = Vocab(train_corpus, train_corpus)  # TODO two training corpora?
     print('number of sequences in train corpus={}'.format(train_corpus.num_sequences))
 
     # keep input and output size of model constant
@@ -72,13 +70,13 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 
         # train + evaluate
         rnn = RNN(master_vocab, rnn_params)
-        cat2results = train_loop(rnn, name2seqs, master_vocab)
+        cat2results = train_loop(rnn, master_vocab)
         name2dist2cat_pps, name2dist2item_pps = cat2results['B']
 
         # check item-perplexity against theory
         if not PROGRESS_BAR:
             check_b_item_pp_at_end(
-                rnn, input_params, master_vocab, name2seqs, name2dist2item_pps)
+                rnn, input_params, master_vocab, name2dist2item_pps)
 
         # populate result data structures
         item_pps = name2dist2item_pps['train'][TRAIN_DISTANCE]

@@ -20,9 +20,8 @@ PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
 MAX_NUM_EPOCHS = 10
 PLOT_SEQ_NAMES = ['train', 'test']  # test = novel
-NUM_REPS = 10
+NUM_REPS = 1
 PROGRESS_BAR = True
-SHOW_PLOTS = True
 
 config.Eval.skip_seq_name = 'novel'  # # test = novel
 
@@ -51,13 +50,13 @@ for pattern in PATTERNS:
     master_vocab = Vocab(train_corpus, test_corpus)
 
     # init result data structures
-    name2cat2item_pp_mat = {corpus.name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in corpus.cats}
+    name2pos2item_pp_mat = {corpus.name: {pos: np.zeros((len(PARAMS1), len(PARAMS2))) for pos in corpus.positions}
                             for corpus in master_vocab.corpora}
-    name2cat2cat_pp_mat = {corpus.name: {cat: np.zeros((len(PARAMS1), len(PARAMS2))) for cat in corpus.cats}
+    name2pos2cat_pp_mat = {corpus.name: {pos: np.zeros((len(PARAMS1), len(PARAMS2))) for pos in corpus.positions}
                            for corpus in master_vocab.corpora}
-    name2cat2item_pp_start = {corpus.name: {cat: None for cat in corpus.cats}
+    name2pos2item_pp_start = {corpus.name: {pos: None for pos in corpus.positions}
                               for corpus in master_vocab.corpora}
-    name2cat2cat_pp_start = {corpus.name: {cat: None for cat in corpus.cats}
+    name2pos2cat_pp_start = {corpus.name: {pos: None for pos in corpus.positions}
                              for corpus in master_vocab.corpora}
 
     # grid search over rnn_params
@@ -77,36 +76,42 @@ for pattern in PATTERNS:
 
                 # train + evaluate
                 rnn = RNN(master_vocab, rnn_params)
-                cat2results = train_loop(rnn, master_vocab)
+                corpus2results = train_loop(rnn, master_vocab)
 
                 # populate result data structures
                 for corpus in master_vocab.corpora:
                     for cat in corpus.cats:
-                        name2cat_pps, name2item_pps = cat2results[cat]
-                        cat_pps = name2cat_pps[corpus.name]
-                        item_pps = name2item_pps[corpus.name]
-                        if not item_pps or not cat_pps:
-                            continue
-                        # category-perplexity
-                        name2cat2cat_pp_mat[corpus.name][cat][i, j] += cat_pps[-1] / NUM_REPS
-                        name2cat2cat_pp_start[corpus.name][cat] = cat_pps[0]
-                        # item-perplexity
-                        name2cat2item_pp_mat[corpus.name][cat][i, j] += item_pps[-1] / NUM_REPS
-                        name2cat2item_pp_start[corpus.name][cat] = item_pps[0]
+                        for pos in corpus.positions:
+                            cat_pps = corpus2results[corpus.name][cat][pos]['cat_pps']
+                            item_pps = corpus2results[corpus.name][cat][pos]['item_pps']
+
+                            # TODO debug
+                            # print(corpus.name, cat, pos)
+                            # print(item_pps)
+
+                            if not item_pps or not cat_pps:
+                                print('skipping', cat, pos)  # TODO nothing is skipped
+                                continue
+                            # category-perplexity
+                            name2pos2cat_pp_mat[corpus.name][pos][i, j] += cat_pps[-1] / NUM_REPS
+                            name2pos2cat_pp_start[corpus.name][pos] = cat_pps[0]
+                            # item-perplexity
+                            name2pos2item_pp_mat[corpus.name][pos][i, j] += item_pps[-1] / NUM_REPS
+                            name2pos2item_pp_start[corpus.name][pos] = item_pps[0]
 
             if PROGRESS_BAR:
                 pbar.update()
 
-    if SHOW_PLOTS:
+    if not (config.Verbosity.cat_pp or config.Verbosity.item_pp):
         # plot heatmaps showing item or category perplexity for all hyper-parameter configurations
         time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
         setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
         setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
         plot_params(time_stamp, input_params, rnn_params)
-        plot_grid_search_results_marcus(time_stamp, 'Category', name2cat2cat_pp_mat, name2cat2cat_pp_start, pattern,
+        plot_grid_search_results_marcus(time_stamp, 'Category', name2pos2cat_pp_mat, name2pos2cat_pp_start, pattern,
                                         PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
                                         PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
-        plot_grid_search_results_marcus(time_stamp, 'Item', name2cat2item_pp_mat, name2cat2item_pp_start, pattern,
+        plot_grid_search_results_marcus(time_stamp, 'Item', name2pos2item_pp_mat, name2pos2item_pp_start, pattern,
                                         PLOT_SEQ_NAMES, MAX_NUM_EPOCHS, NUM_REPS,
                                         PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
 

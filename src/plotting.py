@@ -74,31 +74,24 @@ def plot_pp_vs_x_cat_size(pps_at_end, x, num_reps, ylabel_prefix, figsize=(8, 8)
     plt.show()
 
 
-def plot_grid_search_results_marcus(time_stamp, pp_name, name2cat2pp_mat, name2cat2pp_start, pattern,
+def plot_grid_search_results_marcus(time_stamp, pp_name, name2pos2pp_mat, name2pos2pp_start, pattern,
                                     seq_names, num_epochs, num_reps, ytick_labels, xtick_labels, ylabel, xlabel,
                                     fontsize=16):
-    if len(seq_names) == 2:
-        height = 12
-    elif len(seq_names) == 3:
-        height = 18
-    else:
-        raise AttributeError('Invalid number of seq_names')
-    cats = ['A', 'B']
-    num_cats = len(cats)
     # fig
-    fig = plt.figure(1, figsize=(26, height))
-    gs1 = gridspec.GridSpec(len(seq_names), num_cats)
+    positions = [0, 1, 2]
+    fig = plt.figure(1, figsize=(26, 12))
+    gs1 = gridspec.GridSpec(2, len(positions))
     axarr = [fig.add_subplot(ss) for ss in gs1]
-    for ax, (seq_name, cat) in zip(axarr, product(seq_names, cats)):
-        ax.set_title('sequence_name="{}" cat="{}"'.format(seq_name, cat), fontsize=fontsize)
+    for ax, (seq_name, pos) in zip(axarr, product(seq_names, positions)):
+        ax.set_title('sequence_name="{}" position={}'.format(seq_name, pos), fontsize=fontsize)
         ax.set_ylabel(ylabel, fontsize=fontsize)
         ax.set_xlabel(xlabel, fontsize=fontsize)
         # heatmap
-        mat = name2cat2pp_mat[seq_name][cat]
+        mat = name2pos2pp_mat[seq_name][pos]
         if np.count_nonzero(mat) == 0:
             ax.set_axis_off()
         else:
-            vmax = name2cat2pp_start[seq_name][cat]
+            vmax = name2pos2pp_start[seq_name][pos]
             vmin = 1.0
             im = ax.imshow(mat,
                            aspect='auto',
@@ -135,7 +128,7 @@ def plot_grid_search_results_marcus(time_stamp, pp_name, name2cat2pp_mat, name2c
     #
     fig.suptitle('{}-Perplexity\npattern="{}"\nepoch={}\nn={}\n{}'.format(
         pp_name, pattern, num_epochs, num_reps, time_stamp), fontsize=fontsize)
-    gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
+    gs1.tight_layout(fig, rect=[0, 0, 1, 0.88])
     plt.show()
 
 
@@ -192,7 +185,7 @@ def plot_grid_search_results(time_stamp, cat, pp_name, name2dist2pp_mat, name2di
     #
     fig.suptitle('{}-Perplexity for "{}"\nepoch={}\nn={}\n{}'.format(
         pp_name, cat, num_epochs, num_reps, time_stamp), fontsize=fontsize)
-    gs1.tight_layout(fig, rect=[0, 0, 1, 0.90])
+    gs1.tight_layout(fig, rect=[0, 0, 1, 0.88])
     plt.show()
 
 

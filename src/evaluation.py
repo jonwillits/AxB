@@ -89,7 +89,7 @@ def calc_item_pp(filtered_logits, filtered_onehots):
     return item_pp
 
 
-def update_cat_and_item_pps(srn, master_vocab, distances, corpus2results):
+def update_cat_and_item_pps(srn, master_vocab, corpus2results):
     for corpus in master_vocab.corpora:
 
         seqs = master_vocab.generate_index_sequences(corpus)
@@ -97,43 +97,50 @@ def update_cat_and_item_pps(srn, master_vocab, distances, corpus2results):
         for cat in corpus.cats:
 
             # logits and softmax probabilities - calculate once only, and then filter by distance
-            x, all_y = srn.to_x_and_y(seqs)
+            all_x, all_y = srn.to_x_and_y(seqs)
             all_onehots = np.eye(master_vocab.num_items)[all_y]
             all_logits = srn.calc_logits(seqs)
             all_probs = softmax(all_logits, axis=1)
 
-            # filter by category
-            is_cat_bools = [True if item.startswith(cat) else False for item in master_vocab.items]
-            cat_probs = all_probs[:, is_cat_bools]
-            cat_logits = all_logits[:, is_cat_bools]
-            cat_onehots = all_onehots[:, is_cat_bools]
-            cat_y = all_y
-
-            if config.Verbosity.cat_pp or config.Verbosity.item_pp:
-                print('Evaluating perplexity for "{}" on "{}" sequences with distances={}'.format(
-                    cat, corpus.name, distances))
+            # filter by columns by category
+            is_cat_col_bools = [True if item.startswith(cat) else False for item in master_vocab.items]
+            cat_probs = all_probs[:, is_cat_col_bools]
+            cat_logits = all_logits[:, is_cat_col_bools]
+            cat_onehots = all_onehots[:, is_cat_col_bools]
 
             # pos_y is a list with integers representing the position of the item that is predicted
             pos_seqs = [list(range(len(seq))) for seq in seqs]
             pos_x, pos_y = srn.to_x_and_y(pos_seqs)
             for pos in corpus.positions:
 
-                # filter by position
-                is_pos_bools = [True if pos_yi == pos else False for pos_yi in pos_y]
-                pos_cat_probs = cat_probs[is_pos_bools]
-                pos_cat_logits = cat_logits[is_pos_bools]
-                pos_cat_onehots = cat_onehots[is_pos_bools]
-                pos_cat_y = cat_y[is_pos_bools]
+                # filter rows by position + category
+                is_pos_row_bools = [True if pos_yi == pos else False for pos_yi in pos_y]
+                is_cat_row_bools = [True if master_vocab.items[yi].startswith(cat) else False for yi in all_y]
+                is_pos_cat_bools = np.logical_and(is_pos_row_bools, is_cat_row_bools)
+                if not np.any(is_pos_cat_bools):
+                    continue  # only evaluate perplexity when cat actually occurs in given position
+                probs = cat_probs[is_pos_cat_bools]
+                logits = cat_logits[is_pos_cat_bools]
+                onehots = cat_onehots[is_pos_cat_bools]
+                y = all_y[is_pos_cat_bools]
+
+
+
+                if config.Verbosity.cat_pp or config.Verbosity.item_pp:
+                    print('Evaluating perplexity:')
+                    print('corpus_name="{}"'.format(corpus.name))
+                    print('cat="{}"'.format(cat))
+                    print('pos={}'.format(pos))
 
                 # compute
-                cat_pp = calc_cat_pp(master_vocab, cat, pos_cat_probs, pos_cat_y)
-                item_pp = calc_item_pp(pos_cat_logits, pos_cat_onehots)
+                cat_pp = calc_cat_pp(master_vocab, cat, probs, y)
+                item_pp = calc_item_pp(logits, onehots)
                 # collect
-                corpus2results[corpus.name][cat][pos]['cat_pp'].append(cat_pp)
-                corpus2results[corpus.name][cat][pos]['item_pp'].append(item_pp)
+                corpus2results[corpus.name][cat][pos]['cat_pps'].append(cat_pp)
+                corpus2results[corpus.name][cat][pos]['item_pps'].append(item_pp)
 
-        if config.Verbosity.cat_pp or config.Verbosity.item_pp:
-            print('------------------------------------------------------------')
+                if config.Verbosity.cat_pp or config.Verbosity.item_pp:
+                    print('------------------------------------------------------------')
 
 
 def calc_cross_entropy(predictions, targets, epsilon=1e-12):

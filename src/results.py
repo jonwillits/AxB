@@ -7,8 +7,8 @@ class Results(Mapping, ABC):
         self.corpus = corpus
         self.name = corpus.name
         #
-        self._results = {cat: {position: {'cat_pp':  [],
-                                          'item_pp': []} for position in corpus.positions}
+        self._results = {cat: {position: {'cat_pps':  [],
+                                          'item_pps': []} for position in corpus.positions}
                          for cat in corpus.cats}
 
     def __getitem__(self, key):
