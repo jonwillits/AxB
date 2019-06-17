@@ -32,7 +32,7 @@ class MarcusCorpus:
         self.a_items = ['{}{}'.format(cat, i) for cat, i in product(self.cats[0], range(self.params.ab_cat_size))]
         self.b_items = ['{}{}'.format(cat, i) for cat, i in product(self.cats[1], range(self.params.ab_cat_size))]
         self.items = SortedSet(self.a_items + self.b_items)
-        if self.params.punctuation:
+        if self.params.punctuation or self.params.punctuation_at_start:
             self.items.add('.')
         #
         self.sequence_population = self.generate_sequence_population()

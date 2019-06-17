@@ -14,18 +14,16 @@ from src.vocab import Vocab
 from src.rnn import RNN
 from src import config
 
-NUM_PRETRAIN_EPOCHS = 2  # set to 0 to not pre-train
 PATTERNS = ['aab'] or ['abb', 'aab', 'aba']
 PARAMS1_NAME = 'learning_rate'
 PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
-NUM_EPOCHS = 1
+NUM_PRETRAIN_EPOCHS = 20  # set to 0 to not pre-train
+NUM_EPOCHS = 20
 PLOT_SEQ_NAMES = ['train', 'test']  # test = novel
 NUM_REPS = 10
 PROGRESS_BAR = True
-
-config.Eval.skip_seq_name = 'novel'  # # test = novel
 
 # params
 input_params = config.Marcus  # cannot be copied
@@ -104,10 +102,10 @@ for pattern in PATTERNS:
         time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
         setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
         setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
-        plot_params(time_stamp, input_params, rnn_params)
-        plot_grid_search_results_marcus(time_stamp, 'Category', name2pos2cat_pp_mat, name2pos2cat_pp_start, pattern,
-                                        PLOT_SEQ_NAMES, NUM_EPOCHS, NUM_REPS,
-                                        PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+        # plot_params(time_stamp, input_params, rnn_params)
+        # plot_grid_search_results_marcus(time_stamp, 'Category', name2pos2cat_pp_mat, name2pos2cat_pp_start, pattern,
+        #                                 PLOT_SEQ_NAMES, NUM_EPOCHS, NUM_REPS,
+        #                                 PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
         plot_grid_search_results_marcus(time_stamp, 'Item', name2pos2item_pp_mat, name2pos2item_pp_start, pattern,
                                         PLOT_SEQ_NAMES, NUM_EPOCHS, NUM_REPS,
                                         PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
