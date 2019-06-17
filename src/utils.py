@@ -48,11 +48,23 @@ def to_string(params):
     return res
 
 
-def randomize_seqs(*seqs_list):
+def make_random_sequences(items, seq_size, num_sequences, exclude_pattern=None):
+    items = [i for i in items if i != '.']
     res = []
-    for sequences in seqs_list:
-        for sequence in sequences:
-            new_sequence = sequence.copy()
-            random.shuffle(new_sequence)
-            res.append(new_sequence)
+    while not len(res) >= num_sequences:
+        random_sequence = np.random.choice(items, size=seq_size, replace=True).tolist()
+        if is_pattern_match(random_sequence, exclude_pattern):
+            print('Excluded:', random_sequence)
+            continue
+        res.append(random_sequence)
     return res
+
+
+def is_pattern_match(seq, pattern):
+    if pattern == 'aab':
+        if seq[0] == seq[1] != seq[2]:
+            return True
+        else:
+            return False
+    else:
+        raise NotImplementedError

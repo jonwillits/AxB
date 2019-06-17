@@ -4,7 +4,7 @@ import sys
 import pyprind
 
 from src.utils import print_params
-from src.utils import randomize_seqs
+from src.utils import make_random_sequences
 from src.utils import calc_max_item_pp_marcus
 from src.plotting import plot_grid_search_results_marcus
 from src.plotting import plot_params
@@ -76,7 +76,11 @@ for pattern in PATTERNS:
 
                 # train + evaluate
                 rnn = RNN(master_vocab, rnn_params)
-                random_seqs = randomize_seqs(master_vocab.train_seqs, master_vocab.test_seqs) * NUM_PRETRAIN_EPOCHS
+                items_in_random_seqs = [i for i in range(master_vocab.num_items) if master_vocab.items[i] != '.']
+                random_seqs = make_random_sequences(items_in_random_seqs,
+                                                    exclude_pattern=pattern,
+                                                    seq_size=3,
+                                                    num_sequences=len(master_vocab.train_seqs)) * NUM_PRETRAIN_EPOCHS
                 corpus2results = train_loop(rnn, master_vocab, pretrain_seqs=random_seqs)
 
                 # populate result data structures
