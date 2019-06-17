@@ -7,7 +7,7 @@ from src.evaluation import check_b_item_pp_at_end
 from src.plotting import plot_pp_vs_x_cat_size
 from src.plotting import plot_params
 from src.jobs import train_loop
-from src.utils import calc_max_item_pp
+from src.utils import calc_max_item_pp_axb
 from src.corpus import AxbCorpus
 from src.vocab import Vocab
 from src.rnn import RNN
@@ -39,7 +39,7 @@ setattr(input_params, 'max_distance', TRAIN_DISTANCE)
 setattr(input_params, 'sample_size', MAX_NUM_SEQUENCES * NUM_ITERATIONS)
 setattr(input_params, 'ab_cat_size', 3)  # Gomez, 2002 used 3
 
-max_item_pp = calc_max_item_pp(input_params, 'B')
+max_item_pp = calc_max_item_pp_axb(input_params, 'B')
 print('max_item_pp={}'.format(max_item_pp))
 
 # init result data structures

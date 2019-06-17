@@ -6,6 +6,7 @@ from itertools import product
 
 from src.evaluation import check_b_item_pp_at_end
 from src.utils import print_params
+from src.utils import calc_max_item_pp_axb
 from src.plotting import plot_grid_search_results
 from src.plotting import plot_params
 from src.jobs import train_loop
@@ -18,12 +19,11 @@ PARAMS1_NAME = 'learning_rate'
 PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
 PARAMS2 = [2, 4, 6, 8]
-TRAIN_DISTANCES = [[0, 1]]
-MAX_EVAL_DISTANCE = 3
+TRAIN_DISTANCES = [[0, 1]]  # specify both min and max e.g. [MIN, MAX]
 TRAIN_X_SET_SIZES = [2]
-MAX_NUM_EPOCHS = 10
-NUM_REPS = 1
-PROGRESS_BAR = True
+NUM_EPOCHS = 10
+NUM_REPS = 10
+PROGRESS_BAR = False
 LIMIT_BPPT = False  # if True, generalization to unseen distances is impossible
 
 
@@ -75,7 +75,7 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
             # overwrite rnn_params
             setattr(rnn_params, PARAMS1_NAME, param1)
             setattr(rnn_params, PARAMS2_NAME, param2)
-            setattr(rnn_params, 'num_epochs', MAX_NUM_EPOCHS)
+            setattr(rnn_params, 'num_epochs', NUM_EPOCHS)
 
             if not PROGRESS_BAR:
                 print_params(rnn_params)
@@ -111,6 +111,7 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
 
             if PROGRESS_BAR:
                 pbar.update()
+
     if not (config.Verbosity.cat_pp or config.Verbosity.item_pp):
         # plot heatmaps showing item or category perplexity for al hyper-parameter configurations
         time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
@@ -119,8 +120,8 @@ for (min_d, max_d), train_x_cat_size in product(TRAIN_DISTANCES, TRAIN_X_SET_SIZ
         setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
         plot_params(time_stamp, input_params, rnn_params)
         plot_grid_search_results(time_stamp, 'B', 'Category', name2dist2cat_pp_mat, name2dist2cat_pp_start, seq_names,
-                                 MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+                                 NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
         plot_grid_search_results(time_stamp, 'B', 'Item', name2dist2item_pp_mat, name2dist2item_pp_start, seq_names,
-                                 MAX_NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+                                 NUM_EPOCHS, NUM_REPS, PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
 
 

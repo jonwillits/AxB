@@ -19,21 +19,20 @@ def check_b_item_pp_at_end(srn, input_params, master_vocab, corpus2results):
                 continue
 
             x, y = srn.to_x_and_y(filtered_seqs)
-            num_windows = len(y)
-            num_b_windows = np.sum([1 if master_vocab.items[yi].startswith('B') else 0 for yi in y])
-            max_b_item_pp = np.exp(-np.log(1 / input_params.ab_cat_size) * num_b_windows / num_windows)
-            min_b_item_pp = np.exp(-np.log(1 / 1) * num_b_windows / num_windows)
+            max_b_item_pp = np.exp(1 * -np.log(1 / input_params.ab_cat_size) / 1)
+            min_b_item_pp = np.exp(1 * -np.log(1 / 1) / 1)
 
             #
-            b_item_pp_at_start = name2dist2item_pps[corpus.name][dist][0]
-            b_item_pp_at_end = name2dist2item_pps[corpus.name][dist][-1]
+            pos = dist + 1  # e.g. B in A-x-B is in pos=2 and dist=1
+            if dist < 0:  # impossible for AxB corpus
+                continue
+            b_item_pp_at_start = corpus2results[corpus.name]['B'][pos]['item_pps'][0]  # TODO
+            b_item_pp_at_end = corpus2results[corpus.name]['B'][pos]['item_pps'][-1]  # TODO
 
             # console
             print('-------------')
             print('distance={} corpus.name={}'.format(dist, corpus.name))
             print('-------------')
-            print('num_b_windows', num_b_windows)
-            print('num_windows', num_windows)
             print('max_b_item_pp', max_b_item_pp)
             print('min_b_item_pp', min_b_item_pp)
             print('b_item_pp_at_start={}'.format(b_item_pp_at_start))
@@ -147,11 +146,11 @@ def calc_cross_entropy(predictions, targets, epsilon=1e-12):
     """
     Computes cross entropy between targets (encoded as one-hot vectors)
     and predictions.
-    Input: predictions (N, k) ndarray
-           targets (N, k) ndarray
+    Input: predictions (n, k) ndarray
+           targets (n, k) ndarray
     Returns: scalar
     """
     predictions = np.clip(predictions, epsilon, 1. - epsilon)
-    N = predictions.shape[0]
-    ce = -np.sum(targets*np.log(predictions+1e-9))/N
-    return ce
+    n = predictions.shape[0]
+    res = -np.sum(targets * np.log(predictions + 1e-9)) / n
+    return res
