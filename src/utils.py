@@ -61,17 +61,17 @@ def make_random_sequences(items, seq_size, num_sequences, exclude_pattern=None):
 
 
 def is_pattern_match(seq, pattern):
-    if pattern == 'aab':
+    if pattern == 'xxy':
         if seq[0] == seq[1] != seq[2]:
             return True
         else:
             return False
-    elif pattern == 'abb':
+    elif pattern == 'xyy':
         if seq[0] != seq[1] == seq[2]:
             return True
         else:
             return False
-    elif pattern == 'aba':
+    elif pattern == 'xyx':
         if seq[1] != seq[0] == seq[2]:
             return True
         else:

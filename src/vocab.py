@@ -1,9 +1,8 @@
 
 class Vocab:
-    def __init__(self, train_corpus, test_corpus, *other_corpora):
+    def __init__(self, train_corpus, *other_corpora):
         self.train_corpus = train_corpus
-        self.test_corpus = test_corpus
-        self.corpora = [train_corpus, test_corpus]
+        self.corpora = [train_corpus]
         self.corpora.extend(other_corpora)
         self.items = self.make_items()
         self.item2id = {item: n for n, item in enumerate(self.items)}
@@ -14,8 +13,7 @@ class Vocab:
         for k, v in sorted(self.item2id.items(), key=lambda i: i[1]):
             print(k, v)
 
-        self.train_seqs = self.generate_index_sequences(train_corpus)
-        self.test_seqs = self.generate_index_sequences(test_corpus)
+        self.train_seqs = self.make_index_sequences(train_corpus)
 
     @property
     def num_items(self):
@@ -29,7 +27,7 @@ class Vocab:
                     res.append(item)
         return res
 
-    def generate_index_sequences(self, corpus):
+    def make_index_sequences(self, corpus):
         res = []
         for sequence in corpus.sequences:
             new_sequence = []

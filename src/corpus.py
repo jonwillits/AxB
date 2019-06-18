@@ -54,11 +54,11 @@ class MarcusCorpus:
         res = []
         for i in range(self.params.ab_cat_size):
             for j in range(self.params.ab_cat_size):
-                if self.params.pattern == 'abb':
+                if self.params.pattern == 'xyy':
                     sequence = [self.a_items[i], self.b_items[j], self.b_items[j]]
-                elif self.params.pattern == 'aab':
+                elif self.params.pattern == 'xxy':
                     sequence = [self.a_items[i], self.a_items[i], self.b_items[j]]
-                elif self.params.pattern == 'aba':
+                elif self.params.pattern == 'xyx':
                     sequence = [self.a_items[i], self.b_items[j], self.a_items[i]]
                 else:
                     raise AttributeError('Invalid arg to "pattern".')

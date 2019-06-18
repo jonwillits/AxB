@@ -8,7 +8,7 @@ def check_b_item_pp_at_end(srn, input_params, master_vocab, corpus2results):
     # calculate theoretical maximum and minimum perplexity
     # "B" item perplexity should converge on 1.0, even with variable size distance (for AxB corpus)
     for corpus in master_vocab.corpora:
-        seqs = master_vocab.generate_index_sequences(corpus)
+        seqs = master_vocab.make_index_sequences(corpus)
         distances = np.arange(1, config.Eval.max_distance + 1)
         for dist in distances:
 
@@ -91,7 +91,7 @@ def calc_item_pp(filtered_logits, filtered_onehots):
 def update_cat_and_item_pps(srn, master_vocab, corpus2results):
     for corpus in master_vocab.corpora:
 
-        seqs = master_vocab.generate_index_sequences(corpus)
+        seqs = master_vocab.make_index_sequences(corpus)
 
         for cat in corpus.cats:
 

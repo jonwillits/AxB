@@ -10,25 +10,26 @@ from src.utils import to_string
 
 
 def plot_cat_and_item_pps(corpus2results, corpus_names, max_cat_pp, cat='B'):
-    for name in corpus_names:
-        plot_pp_trajs(corpus2results[name], name, cat, 'cat_pps', y_max=max_cat_pp)
-    for name in corpus_names:
-        plot_pp_trajs(corpus2results[name], name, cat, 'item_pps', y_max=None)
+    for corpus_name in corpus_names:
+        plot_pp_trajs(corpus2results[corpus_name][cat], 'position', cat, 'cat_pps',
+                      title=corpus_name, y_max=max_cat_pp)
+    for corpus_name in corpus_names:
+        plot_pp_trajs(corpus2results[corpus_name][cat], 'position', cat, 'item_pps',
+                      title=corpus_name, y_max=None)
 
 
-def plot_pp_trajs(cat2pos2pps, title, cat, which_pp, figsize=(8, 8), fontsize=16, x_step=10, y_max=None, grid=False):
-    pos2pps = cat2pos2pps[cat]
-    #
+def plot_pp_trajs(var2pps, var_name, cat, pos, which_pp,
+                  title='', figsize=(6, 6), fontsize=16, x_step=10, y_max=None, grid=False):
     fig, ax = plt.subplots(figsize=figsize, dpi=None)
-    plt.title('sequences = "{}"'.format(title), fontsize=fontsize)
+    plt.title(title, fontsize=fontsize)
     ax.set_xlabel('Epoch', fontsize=fontsize)
     if which_pp == 'cat_pps':
-        ylabel_prefix = 'Category'
+        y_label_prefix = 'Category'
     elif which_pp == 'item_pps':
-        ylabel_prefix = 'Item'
+        y_label_prefix = 'Item'
     else:
         raise AttributeError('Invalid arg to "which_pp"')
-    ax.set_ylabel('"{}" {} Perplexity'.format(cat, ylabel_prefix), fontsize=fontsize)
+    ax.set_ylabel('"{}" Position {} {} Perplexity'.format(cat, pos, y_label_prefix), fontsize=fontsize)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(axis='both', which='both', top=False, right=False)
@@ -38,17 +39,18 @@ def plot_pp_trajs(cat2pos2pps, title, cat, which_pp, figsize=(8, 8), fontsize=16
     if y_max is not None:
         ax.set_ylim([1, y_max])
     else:
-        all_vals = np.concatenate([pps for pps in pos2pps.values()])
-        ax.set_ylim([1, np.max(all_vals)])
+        all_vals = np.concatenate([pps[which_pp] for pps in var2pps.values()])
+        ax.set_ylim([1, np.max(all_vals) + 1.0])
     # plot
     x = None
-    num_trajs = len(pos2pps)
+    num_trajs = len(var2pps)
     palette = iter(sns.color_palette('hls', num_trajs))
-    for pos, pps in sorted(pos2pps.items(), key=lambda i: i[0]):
-        num_pps = len(pps)
-        x = np.arange(0, num_pps + 1, x_step)
+    # for var_val, pps in sorted(var2pps.items(), key=lambda i: i[0]):
+    for var_val, pps in sorted(var2pps.items(), key=lambda i: i[0] in title):
+        num_pps = len(pps[which_pp])
+        x = np.arange(0, num_pps, x_step)
         c = next(palette)
-        ax.plot(pps[which_pp], '-', color=c, label='distance={}'.format(pos -1))
+        ax.plot(pps[which_pp], '-', color=c, label='{}={}'.format(var_name, var_val))
     ax.set_xticks(x)
     ax.set_xticklabels(x)
     #

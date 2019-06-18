@@ -14,7 +14,7 @@ from src.vocab import Vocab
 from src.rnn import RNN
 from src import config
 
-PATTERNS = ['aab'] or ['abb', 'aab', 'aba']
+PATTERNS = ['xxy'] or ['xyy', 'xxy', 'xyx']
 PARAMS1_NAME = 'learning_rate'
 PARAMS1 = [0.1, 0.25, 0.5, 0.75, 1.0]
 PARAMS2_NAME = 'hidden_size'
@@ -43,7 +43,7 @@ for pattern in PATTERNS:
     # modify input_params before generating sequences
     setattr(input_params, 'pattern', pattern)
 
-    # make train and test sequences
+    # make train and test corpora
     train_corpus = MarcusCorpus(input_params, name='train')
     test_corpus = MarcusCorpus(input_params,  name='test')
     assert set(train_corpus.cats).isdisjoint(test_corpus.cats)

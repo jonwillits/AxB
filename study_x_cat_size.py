@@ -54,7 +54,7 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 
     # make train but not test sequences
     train_corpus = AxbCorpus(input_params, name='train')
-    master_vocab = Vocab(train_corpus, train_corpus)  # TODO two training corpora?
+    master_vocab = Vocab(train_corpus)
     print('number of sequences in train corpus={}'.format(train_corpus.num_sequences))
 
     # keep input and output size of model constant

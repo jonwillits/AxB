@@ -4,7 +4,7 @@ class Verbosity:
     summary = False
     cat_pp = False
     item_pp = False
-    seqs_pp = False
+    seqs_pp = True
 
 
 class Eval:
@@ -13,7 +13,7 @@ class Eval:
 
 class Marcus:
     # the basic parameters of the Marcus corpus
-    pattern = 'abb'  # chose from ['abb', 'aab', 'aba']
+    pattern = 'xyy'  # chose from ['xyy', 'xxy', 'xyx']
     ab_cat_size = 3
     punctuation_at_start = False  # punctuation is at start of sequence
     punctuation = False  # punctuation is at end of sequence
