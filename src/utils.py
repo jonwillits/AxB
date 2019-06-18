@@ -66,5 +66,15 @@ def is_pattern_match(seq, pattern):
             return True
         else:
             return False
+    elif pattern == 'abb':
+        if seq[0] != seq[1] == seq[2]:
+            return True
+        else:
+            return False
+    elif pattern == 'aba':
+        if seq[1] != seq[0] == seq[2]:
+            return True
+        else:
+            return False
     else:
-        raise NotImplementedError
+        raise AttributeError('Invald arg to "pattern".')
