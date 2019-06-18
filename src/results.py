@@ -11,8 +11,6 @@ class Results(Mapping, ABC):
                                           'item_pps': []} for position in corpus.positions}
                          for cat in corpus.cats}
 
-        print('Categories in {} corpus: {}'.format(corpus.name, corpus.cats))
-
     def __getitem__(self, key):
         return self._results[key]
 

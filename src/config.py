@@ -1,10 +1,11 @@
 
 
 class Verbosity:
+    vocab = False
     summary = False
     cat_pp = False
     item_pp = False
-    seqs_pp = False
+    seqs_pp = True
 
 
 class Eval:

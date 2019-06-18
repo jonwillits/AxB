@@ -27,7 +27,6 @@ class MarcusCorpus:
     def __init__(self, params, name):
         self.params = params
         self.name = name
-        print('Initializing Marcus corpus with name={}'.format(name))
         #
         self.a_items = ['{}{}'.format(cat, i) for cat, i in product(self.cats[0], range(self.params.ab_cat_size))]
         self.b_items = ['{}{}'.format(cat, i) for cat, i in product(self.cats[1], range(self.params.ab_cat_size))]
@@ -76,7 +75,6 @@ class AxbCorpus:
     def __init__(self, params, name):
         self.params = params
         self.name = name
-        print('Initializing AxB corpus with name={}'.format(name))
         #
         self.cats = ['A', 'x', 'B']
         self.a_items = self.make_items('A')
@@ -110,7 +108,7 @@ class AxbCorpus:
         else:
             raise NotImplementedError('What to do when name is not "train" or "test"?')
 
-    def make_items(self, cat):  # TODO test
+    def make_items(self, cat):
         res = []
         if cat == 'A':
             for i in range(self.params.ab_cat_size):

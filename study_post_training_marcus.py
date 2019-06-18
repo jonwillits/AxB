@@ -12,12 +12,12 @@ from src.vocab import Vocab
 from src.rnn import RNN
 from src import config
 
-PATTERNS = ['xyy', 'xxy', 'xyx']
+PATTERNS = ['xxy'] or ['xyy', 'xxy', 'xyx']
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = 0  # TODO 0 epochs here should start pp in same position at pos-training but doesn't
 NUM_POST_TRAIN_EPOCHS = 10
 NUM_REPS = 10
-PROGRESS_BAR = True
+PROGRESS_BAR = False
 
 pattern2eval_pos = {'xyy': 2, 'xxy': 1, 'xyx': 2}
 
@@ -44,7 +44,8 @@ for pattern1, pattern2 in combinations(['xyy', 'xxy', 'xyx'], 2):
     train_corpus = MarcusCorpus(input_params, name='train')
 
     # progressbar
-    print('Training {} models...'.format(NUM_REPS))
+    if PROGRESS_BAR:
+        print('Training {} models...'.format(NUM_REPS))
     pbar = pyprind.ProgBar(NUM_REPS * 2, stream=sys.stdout)
 
     for is_consistent in [True, False]:
@@ -69,9 +70,13 @@ for pattern1, pattern2 in combinations(['xyy', 'xxy', 'xyx'], 2):
             # train
             master_vocab = Vocab(train_corpus)
             rnn = RNN(master_vocab, rnn_params)
-            train_loop(rnn, master_vocab)
+            # train_loop(rnn, master_vocab)  # TODO this is influencing pp start point even when NUM_EPOCHS=0
+            if not PROGRESS_BAR:
+                print('\nCompleted pre-training\n')
 
             # post-train on sequences with either pattern1 or pattern2
+            if not PROGRESS_BAR:
+                print('Pos-training with pattern {} that is consistent={}'.format(pattern, is_consistent))
             master_vocab = Vocab(test_corpus)  # this needs to be done to train on test corpus
             rnn.params.num_epochs = NUM_POST_TRAIN_EPOCHS
             corpus2results = train_loop(rnn, master_vocab)
