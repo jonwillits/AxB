@@ -11,25 +11,31 @@ from src.utils import to_string
 
 def plot_cat_and_item_pps(corpus2results, corpus_names, max_cat_pp, cat='B'):
     for corpus_name in corpus_names:
-        plot_pp_trajs(corpus2results[corpus_name][cat], 'position', cat, 'cat_pps',
-                      title=corpus_name, y_max=max_cat_pp)
+        plot_pp_trajs(corpus2results[corpus_name][cat], 'position', 'cat_pps',
+                      cat=cat, title=corpus_name, y_max=max_cat_pp)
     for corpus_name in corpus_names:
-        plot_pp_trajs(corpus2results[corpus_name][cat], 'position', cat, 'item_pps',
-                      title=corpus_name, y_max=None)
+        plot_pp_trajs(corpus2results[corpus_name][cat], 'position', 'item_pps',
+                      cat=cat,  title=corpus_name, y_max=None)
 
 
-def plot_pp_trajs(var2pps, var_name, cat, pos, which_pp,
+def plot_pp_trajs(var2pps, var_name, which_pp, cat=None, pos=None,
                   title='', figsize=(6, 6), fontsize=16, x_step=10, y_max=None, grid=False):
     fig, ax = plt.subplots(figsize=figsize, dpi=None)
     plt.title(title, fontsize=fontsize)
-    ax.set_xlabel('Epoch', fontsize=fontsize)
+    # labels
     if which_pp == 'cat_pps':
         y_label_prefix = 'Category'
     elif which_pp == 'item_pps':
         y_label_prefix = 'Item'
     else:
         raise AttributeError('Invalid arg to "which_pp"')
-    ax.set_ylabel('"{}" Position {} {} Perplexity'.format(cat, pos, y_label_prefix), fontsize=fontsize)
+    if cat is None or pos is None:
+        y_label = 'Perplexity'
+    else:
+        y_label = '"{}" Position {} {} Perplexity'.format(cat, pos, y_label_prefix)
+    ax.set_ylabel(y_label, fontsize=fontsize)
+    ax.set_xlabel('Epoch', fontsize=fontsize)
+    # axis
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(axis='both', which='both', top=False, right=False)

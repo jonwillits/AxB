@@ -14,7 +14,8 @@ from src import config
 
 PATTERNS = ['xyy', 'xxy', 'xyx']
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 1
+NUM_POST_TRAIN_EPOCHS = 10
 NUM_REPS = 10
 PROGRESS_BAR = True
 
@@ -35,8 +36,8 @@ for pattern1, pattern2 in combinations(['xyy', 'xxy', 'xyx'], 2):
         continue
 
     # init result data structures
-    pattern2pps = {pattern1: {'item_pps': np.zeros(NUM_EPOCHS + 1)},  # + 1 for extra eval time point
-                   pattern2: {'item_pps': np.zeros(NUM_EPOCHS + 1)}}
+    pattern2pps = {pattern1: {'item_pps': np.zeros(NUM_POST_TRAIN_EPOCHS + 1)},  # + 1 for extra eval time point
+                   pattern2: {'item_pps': np.zeros(NUM_POST_TRAIN_EPOCHS + 1)}}
 
     # make train_corpus
     setattr(input_params, 'pattern', pattern1)
@@ -72,26 +73,21 @@ for pattern1, pattern2 in combinations(['xyy', 'xxy', 'xyx'], 2):
 
             # post-train on sequences with either pattern1 or pattern2
             master_vocab = Vocab(test_corpus)  # this needs to be done to train on test corpus
+            rnn.params.num_epochs = NUM_POST_TRAIN_EPOCHS
             corpus2results = train_loop(rnn, master_vocab)
 
-            # TODO
-            print(is_consistent)
-            print(pattern1, pattern2)
-            print(cat, pos)
-            assert len(corpus2results['test'][cat][pos]['item_pps']) > 0
-
             # populate result data structures
+            assert len(corpus2results['test'][cat][pos]['item_pps']) > 0
             item_pps = corpus2results['test'][cat][pos]['item_pps']
             pattern2pps[pattern]['item_pps'] += np.asarray(item_pps) / NUM_REPS
 
             if PROGRESS_BAR:
                 pbar.update()
 
-    # TODO figure title is not corret because position varies with is_consistent
-
     # plot perplexity
+    # note: the two perplexity trajectories are not guaranteed to be computed on the same category and position
     time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
     plot_params(time_stamp, input_params, rnn_params)
-    plot_pp_trajs(pattern2pps, 'post-training pattern', cat, pos, 'item_pps',
-                  x_step=1, title='Comparing post-training performance'
-                                  '\npre-training with pattern={}'.format(pattern1))
+    plot_pp_trajs(pattern2pps, 'post-training pattern', 'item_pps',
+                  x_step=1, title='Comparing post-training performance after'
+                                  '\n{}-epoch pre-training with pattern={}'.format(NUM_EPOCHS, pattern1))
