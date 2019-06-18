@@ -23,12 +23,11 @@ master_vocab = Vocab(train_corpus, test_corpus)
 
 # train
 rnn = RNN(master_vocab, rnn_params)
-cat2results = train_loop(rnn, master_vocab)
-name2dist2cat_pps, name2dist2item_pps = cat2results['B']
+corpus2results = train_loop(rnn, master_vocab)
 
 # plot
 max_cat_pp = calc_max_cat_pp(input_params, train_corpus.num_sequences, master_vocab.num_items)
-plot_cat_and_item_pps(name2dist2cat_pps, name2dist2item_pps, seq_names=['train'], max_cat_pp=max_cat_pp)
+plot_cat_and_item_pps(corpus2results, corpus_names=['train'], max_cat_pp=max_cat_pp)
 
 
-check_b_item_pp_at_end(rnn, input_params, master_vocab, name2dist2item_pps)
+check_b_item_pp_at_end(rnn, input_params, master_vocab, corpus2results)

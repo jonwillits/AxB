@@ -9,18 +9,26 @@ from src import config
 from src.utils import to_string
 
 
-def plot_cat_and_item_pps(name2dist2cat_pps, name2dist2item_pps, seq_names, max_cat_pp):
-    for name in seq_names:
-        plot_pp_trajs(name2dist2cat_pps[name], name, 'Category', y_max=max_cat_pp)
-    for name in seq_names:
-        plot_pp_trajs(name2dist2item_pps[name], name, 'Type', y_max=None)
+def plot_cat_and_item_pps(corpus2results, corpus_names, max_cat_pp, cat='B'):
+    for name in corpus_names:
+        plot_pp_trajs(corpus2results[name], name, cat, 'cat_pps', y_max=max_cat_pp)
+    for name in corpus_names:
+        plot_pp_trajs(corpus2results[name], name, cat, 'item_pps', y_max=None)
 
 
-def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x_step=10, y_max=None, grid=False):
+def plot_pp_trajs(cat2pos2pps, title, cat, which_pp, figsize=(8, 8), fontsize=16, x_step=10, y_max=None, grid=False):
+    pos2pps = cat2pos2pps[cat]
+    #
     fig, ax = plt.subplots(figsize=figsize, dpi=None)
     plt.title('sequences = "{}"'.format(title), fontsize=fontsize)
     ax.set_xlabel('Epoch', fontsize=fontsize)
-    ax.set_ylabel('{} Perplexity'.format(ylabel_prefix), fontsize=fontsize)
+    if which_pp == 'cat_pps':
+        ylabel_prefix = 'Category'
+    elif which_pp == 'item_pps':
+        ylabel_prefix = 'Item'
+    else:
+        raise AttributeError('Invalid arg to "which_pp"')
+    ax.set_ylabel('"{}" {} Perplexity'.format(cat, ylabel_prefix), fontsize=fontsize)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(axis='both', which='both', top=False, right=False)
@@ -30,17 +38,17 @@ def plot_pp_trajs(dist2pps, title, ylabel_prefix, figsize=(8, 8), fontsize=14, x
     if y_max is not None:
         ax.set_ylim([1, y_max])
     else:
-        all_vals = np.concatenate([pps for pps in dist2pps.values()])
+        all_vals = np.concatenate([pps for pps in pos2pps.values()])
         ax.set_ylim([1, np.max(all_vals)])
     # plot
     x = None
-    num_trajs = len(dist2pps)
+    num_trajs = len(pos2pps)
     palette = iter(sns.color_palette('hls', num_trajs))
-    for dist, pps in sorted(dist2pps.items(), key=lambda i: i[0]):
+    for pos, pps in sorted(pos2pps.items(), key=lambda i: i[0]):
         num_pps = len(pps)
         x = np.arange(0, num_pps + 1, x_step)
         c = next(palette)
-        ax.plot(pps, '-', color=c, label='distance={}'.format(dist))
+        ax.plot(pps[which_pp], '-', color=c, label='distance={}'.format(pos -1))
     ax.set_xticks(x)
     ax.set_xticklabels(x)
     #
