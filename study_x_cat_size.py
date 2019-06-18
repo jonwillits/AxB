@@ -18,7 +18,7 @@ from src import config
 
 TRAIN_DISTANCE = 1
 TRAIN_X_CAT_SIZES = [1] + list(np.linspace(2, 24, 12).astype(np.int))
-NUM_REPS = 100
+NUM_REPS = 10
 PROGRESS_BAR = True
 MAX_NUM_SEQUENCES = 72  # 72 is the total number of sequences in corpus with x_cat_size=24 and ab_cat_size=1
 NUM_ITERATIONS = 1  # number of times each sequence will be heard (on average), Gomez, 2002 used 6
@@ -70,17 +70,16 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
 
         # train + evaluate
         rnn = RNN(master_vocab, rnn_params)
-        cat2results = train_loop(rnn, master_vocab)
-        name2dist2cat_pps, name2dist2item_pps = cat2results['B']
+        corpus2results = train_loop(rnn, master_vocab)
 
         # check item-perplexity against theory
         if not PROGRESS_BAR:
-            check_b_item_pp_at_end(
-                rnn, input_params, master_vocab, name2dist2item_pps)
+            check_b_item_pp_at_end(rnn, input_params, master_vocab, corpus2results)
 
         # populate result data structures
-        item_pps = name2dist2item_pps['train'][TRAIN_DISTANCE]
-        cat_pps = name2dist2cat_pps['train'][TRAIN_DISTANCE]
+        pos = TRAIN_DISTANCE + 1
+        item_pps = corpus2results['train']['B'][pos]['item_pps']
+        cat_pps = corpus2results['train']['B'][pos]['cat_pps']
         if not item_pps or not cat_pps:
             continue
         item_pps_end[size_id] += item_pps[-1] / NUM_REPS
