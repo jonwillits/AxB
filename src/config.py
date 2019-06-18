@@ -5,7 +5,7 @@ class Verbosity:
     summary = False
     cat_pp = False
     item_pp = False
-    seqs_pp = True
+    seqs_pp = False
 
 
 class Eval:
