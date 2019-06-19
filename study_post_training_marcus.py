@@ -3,6 +3,7 @@ import datetime
 import sys
 import pyprind
 from itertools import permutations
+from shapely.geometry import Polygon
 
 from src.plotting import plot_pp_trajs
 from src.plotting import plot_params
@@ -102,12 +103,30 @@ for pattern1, pattern2 in permutations(['xyy', 'xxy', 'xyx'], 2):
                 if PROGRESS_BAR:
                     pbar.update()
 
+        # compute area between two perplexity curves
+        polygon_points = []
+        y1 = list(pattern2pps.values())[0]['item_pps']
+        y2 = list(pattern2pps.values())[1]['item_pps']
+        x = np.arange(len(y1))
+        xy_values1 = list(zip(x, y1))
+        xy_values2 = list(zip(x, y2))
+        polygon_points.extend(xy_values1)  # append all xy points for curve 1
+        polygon_points.extend(xy_values2[::-1])  # append all xy points for curve 2 in the reverse order
+        polygon_points.append(xy_values1[0])  # append the first point in curve 1 again, to "close" the polygon
+        polygon = Polygon(polygon_points)
+        area = polygon.area
+        print('polygon area={}'.format(area))
+
         # plot perplexity
         # note: the two perplexity trajectories are not guaranteed to be computed on the same category and position
         time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
         setattr(input_params, 'pattern', '<see figure>')
         plot_params(time_stamp, input_params, rnn_params)
         plot_pp_trajs(pattern2pps, 'post-training pattern', 'item_pps',
-                      x_step=1, y_max=4.0, title='Comparing post-training performance after'
-                                                 '\n{}-epoch pre-training with pattern={}'
-                                                 '\nn={}'.format(num_epochs, pattern1, NUM_REPS))
+                      x_step=1,
+                      y_max=4.0,
+                      polygon=polygon,
+                      annotation=('Area={:.2f}'.format(area), polygon.centroid.coords[0]),
+                      title='Comparing post-training performance after'
+                            '\n{}-epoch pre-training with pattern={}'
+                            '\nn={}'.format(num_epochs, pattern1, NUM_REPS))

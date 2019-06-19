@@ -19,7 +19,8 @@ def plot_cat_and_item_pps(corpus2results, corpus_names, max_cat_pp, cat='B'):
 
 
 def plot_pp_trajs(var2pps, var_name, which_pp, cat=None, pos=None,
-                  title='', figsize=(6, 6), fontsize=16, x_step=10, y_max=None, grid=False):
+                  title='', figsize=(6, 6), fontsize=16, x_step=10,
+                  y_max=None, grid=False, annotation=None, polygon=None):
     fig, ax = plt.subplots(figsize=figsize, dpi=None)
     plt.title(title, fontsize=fontsize)
     # labels
@@ -59,6 +60,14 @@ def plot_pp_trajs(var2pps, var_name, which_pp, cat=None, pos=None,
         ax.plot(pps[which_pp], '-', color=c, label='{}={}'.format(var_name, var_val))
     ax.set_xticks(x)
     ax.set_xticklabels(x)
+    # annotation
+    plt.annotate(*annotation,
+                 arrowprops={'width': 1, 'headwidth': 5, 'color': 'grey'},
+                 xytext=(0, 50),
+                 textcoords='offset pixels')
+    if polygon is not None:
+        a = np.asarray(polygon.exterior)
+        ax.fill(a[:, 0], a[:, 1], color='grey', alpha=0.2)
     #
     plt.legend(loc='best', frameon=False)
     plt.tight_layout()
