@@ -123,8 +123,6 @@ def update_cat_and_item_pps(srn, master_vocab, corpus2results):
                 onehots = cat_onehots[is_pos_cat_bools]
                 y = all_y[is_pos_cat_bools]
 
-
-
                 if config.Verbosity.cat_pp or config.Verbosity.item_pp:
                     print('Evaluating perplexity:')
                     print('corpus_name="{}"'.format(corpus.name))

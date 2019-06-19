@@ -14,15 +14,20 @@ from src import config
 
 """
 note: the pattern 'xxy' and 'xyx' is the only pattern combination where each is learned equally fast.
+
+note: attributes of config.Marcus are class attributes. 
+changing these attributes will change them everywhere.  
 """
 
 PATTERN1_LIST = ['xyy', 'xxy', 'xyx']
 
-NUM_EPOCHS_LIST = [0]
-NUM_POST_TRAIN_EPOCHS = 10
-NUM_REPS = 100
-PROGRESS_BAR = True
+NUM_EPOCHS_LIST = [0]  # normal training on some pattern
+NUM_POST_TRAIN_EPOCHS = 10  # follow-up training on either pattern-consistent or inconsistent test sequences
+NUM_REPS = 1
+PROGRESS_BAR = False
 
+# perplexity is evaluated at a specific position (pos) in each sequence
+# 'knowledge' of a pattern is defined as below-chance by perplexity at position at which repetition occurs
 pattern2eval_pos = {'xyy': 2, 'xxy': 1, 'xyx': 2}  # position in sequence which is repeated (0-index)
 
 # params
@@ -33,67 +38,98 @@ rnn_params = config.RNN  # cannot be copied
 setattr(rnn_params, 'bptt', int(input_params.punctuation) + int(input_params.punctuation_at_start) + 2)
 print('Set bptt to {}'.format(rnn_params.bptt))
 
-for num_epochs in NUM_EPOCHS_LIST:  # compare results between no pre-training and some pre-training
+# do not use pattern attribute of input_params when setting the pattern of a corpus
+setattr(input_params, 'pattern', None)  # do not use setattr() to change pattern heretofore
 
-    for pattern1, pattern2 in permutations(['xyy', 'xxy', 'xyx'], 2):
+# for all possible permutations of patterns of size 2
+for pattern1, pattern2 in permutations(['xyy', 'xxy', 'xyx'], 2):
 
-        if pattern1 not in PATTERN1_LIST:
-            continue
+    if pattern1 not in PATTERN1_LIST:  # consider only some pattern, if so desired
+        continue
+
+    # vary amount of 'normal' (pre-) training
+    for num_epochs in NUM_EPOCHS_LIST:
 
         # init result data structures
         pattern2pps = {pattern1: {'item_pps': np.zeros(NUM_POST_TRAIN_EPOCHS + 1)},  # + 1 for extra eval time point
                        pattern2: {'item_pps': np.zeros(NUM_POST_TRAIN_EPOCHS + 1)}}
 
-        # make train_corpus
-        setattr(input_params, 'pattern', pattern1)
-        train_corpus = MarcusCorpus(input_params, name='train')
+        # make corpora + vocab
+        train_corpus = MarcusCorpus(input_params, name='train', pattern=pattern1)
+        assert train_corpus.params.pattern == pattern1
+        #
+        test_corpus1 = MarcusCorpus(input_params, name='test1', pattern=pattern1)
+        assert test_corpus1.params.pattern == pattern1
+        #
+        test_corpus2 = MarcusCorpus(input_params, name='test2', pattern=pattern2)
+        assert test_corpus2.params.pattern == pattern2
+        #
+        master_vocab = Vocab(train_corpus, test_corpus1, test_corpus2)  # create vocab once
+
+        assert train_corpus.params.pattern == test_corpus1.params.pattern
+        assert train_corpus.params.pattern != test_corpus2.params.pattern  # setattr only links but does not copy
+
+        # TODO debug
+
+
+        print(test_corpus1)
+        print(test_corpus1.sequences)
+        print(input_params.pattern)
+        print(test_corpus1.params.pattern)
+        print(input_params.pattern)
+        print('----------------------------------')
+        print(test_corpus2)
+        print(test_corpus2.sequences)
+        print(input_params.pattern)
+        print(test_corpus2.params.pattern)
+        print(input_params.pattern)
+        print('=======================================================')
+        raise SystemExit
 
         # progressbar
         if PROGRESS_BAR:
             print('Training {} models...'.format(NUM_REPS))
         pbar = pyprind.ProgBar(NUM_REPS * 2, stream=sys.stdout)
 
-        for is_consistent in [True, False]:
+        for test_corpus in [test_corpus1, test_corpus2]:
 
-            if is_consistent:
-                pattern = pattern1
-            else:
-                pattern = pattern2
+
+            # TODO debug
+            print(test_corpus)
+            print(test_corpus.params.pattern)
+            print(test_corpus.sequences)
 
             # determine what pp to evaluate
+            pattern = test_corpus.params.pattern
             pos = pattern2eval_pos[pattern]  # position in sequence at which item_pp should be below chance
             pattern_cat = pattern[pos]
             cat = {'x': 'C', 'y': 'D'}[pattern_cat]
 
-            # make test corpus (either consistent or inconsistent with pattern seen during training)
-            setattr(input_params, 'pattern', pattern)
-            test_corpus = MarcusCorpus(input_params, name='test')
-
-            # only create master-vocab once to preserve mapping of items to indices
-            master_vocab = Vocab(train_corpus, test_corpus)
-
             # train and evaluate multiple models per hyper-parameter configuration
             for _ in range(NUM_REPS):
 
-                # train
+                # rnn
                 rnn = RNN(master_vocab, rnn_params)
-                rnn.params.num_epochs = num_epochs
-                train_loop(rnn, master_vocab)
-                if not PROGRESS_BAR:
-                    print('\nCompleted pre-training\n')
 
-                # post-train on sequences with either pattern1 or pattern2
+                # 'normal' training
                 if not PROGRESS_BAR:
-                    print('Pos-training with pattern {} that is consistent={}'.format(pattern, is_consistent))
+                    print('Normal training with pattern={}...'.format(pattern))
+                rnn.params.num_epochs = num_epochs
+                train_loop(rnn, master_vocab,
+                           train_seqs=master_vocab.make_index_sequences(train_corpus))
+
+                # post-training
+                if not PROGRESS_BAR:
+                    print('Post-training with pattern={}...'.format(pattern))
                 rnn.params.num_epochs = NUM_POST_TRAIN_EPOCHS
                 corpus2results = train_loop(rnn, master_vocab,
-                                            train_seqs=master_vocab.make_index_sequences(test_corpus))  # TODO test
+                                            train_seqs=master_vocab.make_index_sequences(test_corpus))
 
                 # populate result data structures
                 if not PROGRESS_BAR:
                     print('Retrieving item_pps computed on cat={} and pos={}'.format(cat, pos))
-                assert len(corpus2results['test'][cat][pos]['item_pps']) > 0
-                item_pps = corpus2results['test'][cat][pos]['item_pps']
+                assert len(corpus2results[test_corpus.name][cat][pos]['item_pps']) > 0
+                item_pps = corpus2results[test_corpus.name][cat][pos]['item_pps']
                 pattern2pps[pattern]['item_pps'] += np.asarray(item_pps) / NUM_REPS
 
                 if PROGRESS_BAR:

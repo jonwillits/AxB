@@ -58,7 +58,7 @@ for size_id, train_x_cat_size in enumerate(TRAIN_X_CAT_SIZES):
     print('number of sequences in train corpus={}'.format(train_corpus.num_sequences))
 
     # keep input and output size of model constant
-    master_vocab.items.extend(['x{}'.format(i+1) for i in range(len(TRAIN_X_CAT_SIZES))
+    master_vocab.items.update(['x{}'.format(i+1) for i in range(len(TRAIN_X_CAT_SIZES))
                                if 'x{}'.format(i+1) not in master_vocab.items])
 
     # progressbar

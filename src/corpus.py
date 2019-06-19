@@ -24,8 +24,9 @@ def generate_sequence_sample(corpus):
 
 
 class MarcusCorpus:
-    def __init__(self, params, name):
-        self.params = params
+    def __init__(self, params, name, **kwargs):
+        self._params = params
+        self.kwargs = kwargs
         self.name = name
         #
         self.a_items = ['{}{}'.format(cat, i) for cat, i in product(self.cats[0], range(self.params.ab_cat_size))]
@@ -41,10 +42,27 @@ class MarcusCorpus:
         self.positions = list(range(calc_max_position(self.sequences) + 1))
 
     @property
+    def params(self):
+        """
+        do not directly access _params because it is an un instantiated class.
+        its attributes cannot be changed without changing them everywhere they are used.
+        this property method is a dirty hack which overwrites an attribute (everywhere)
+        that was explicitly passed in as a kwarg (this must be done for any attributes which vary between corpora)
+        the problem is that calling this method changes an attribute specified in kwargs everywhere.
+        """
+        for k, v in self.kwargs.items():
+            setattr(self._params, k, v)
+        return self._params
+
+    @property
     def cats(self):
         if self.name == 'train':
             return ['A', 'B']
         elif self.name == 'test':
+            return ['C', 'D']
+        elif self.name == 'test1':
+            return ['C', 'D']
+        elif self.name == 'test2':
             return ['C', 'D']
         else:
             raise NotImplementedError('How to assign categories when name is not "train" or "test"?')

@@ -106,10 +106,10 @@ for pattern in PATTERNS:
         time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
         setattr(rnn_params, PARAMS1_NAME, '<grid_search>')
         setattr(rnn_params, PARAMS2_NAME, '<grid_search>')
-        # plot_params(time_stamp, input_params, rnn_params)
-        # plot_grid_search_results_marcus(time_stamp, 'Category', name2pos2cat_pp_mat, name2pos2cat_pp_start, pattern,
-        #                                 PLOT_SEQ_NAMES, NUM_EPOCHS, NUM_REPS,
-        #                                 PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
+        plot_params(time_stamp, input_params, rnn_params)
+        plot_grid_search_results_marcus(time_stamp, 'Category', name2pos2cat_pp_mat, name2pos2cat_pp_start, pattern,
+                                        PLOT_SEQ_NAMES, NUM_EPOCHS, NUM_REPS,
+                                        PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)
         plot_grid_search_results_marcus(time_stamp, 'Item', name2pos2item_pp_mat, name2pos2item_pp_start, pattern,
                                         PLOT_SEQ_NAMES, NUM_EPOCHS, NUM_REPS,
                                         PARAMS1, PARAMS2, PARAMS1_NAME, PARAMS2_NAME)

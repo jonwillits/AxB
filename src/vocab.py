@@ -1,3 +1,5 @@
+from sortedcontainers import SortedSet
+
 from src import config
 
 
@@ -10,7 +12,7 @@ class Vocab:
         self.item2id = {item: n for n, item in enumerate(self.items)}
 
         self.item2id['PAD'] = len(self.items)
-        self.items.append('PAD')
+        self.items.add('PAD')
         if config.Verbosity.vocab:
             print('Initializing vocab with pad_id={}'.format(self.item2id['PAD']))
             for k, v in sorted(self.item2id.items(), key=lambda i: i[1]):
@@ -23,11 +25,10 @@ class Vocab:
         return len(self.items)
 
     def make_items(self):
-        res = []
+        res = SortedSet()
         for corpus in self.corpora:
             for item in corpus.items:
-                if item not in res:
-                    res.append(item)
+                res.add(item)
         return res
 
     def make_index_sequences(self, corpus):
