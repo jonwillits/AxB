@@ -16,15 +16,15 @@ from src import config
 note: the pattern 'xxy' and 'xyx' is the only pattern combination where each is learned equally fast.
 
 note: attributes of config.Marcus are class attributes. 
-changing these attributes will change them everywhere.  
+changing these attributes will change them everywhere. they cannot be copied.
 """
 
-PATTERN1_LIST = ['xyy', 'xxy', 'xyx']
+PATTERN1_LIST = ['xyy']  # ['xyy', 'xxy', 'xyx']
 
-NUM_EPOCHS_LIST = [0]  # normal training on some pattern
+NUM_EPOCHS_LIST = [0, 1]  # normal training on some pattern
 NUM_POST_TRAIN_EPOCHS = 10  # follow-up training on either pattern-consistent or inconsistent test sequences
-NUM_REPS = 1
-PROGRESS_BAR = False
+NUM_REPS = 100
+PROGRESS_BAR = True
 
 # perplexity is evaluated at a specific position (pos) in each sequence
 # 'knowledge' of a pattern is defined as below-chance by perplexity at position at which repetition occurs
@@ -37,9 +37,6 @@ rnn_params = config.RNN  # cannot be copied
 # set bptt
 setattr(rnn_params, 'bptt', int(input_params.punctuation) + int(input_params.punctuation_at_start) + 2)
 print('Set bptt to {}'.format(rnn_params.bptt))
-
-# do not use pattern attribute of input_params when setting the pattern of a corpus
-setattr(input_params, 'pattern', None)  # do not use setattr() to change pattern heretofore
 
 # for all possible permutations of patterns of size 2
 for pattern1, pattern2 in permutations(['xyy', 'xxy', 'xyx'], 2):
@@ -56,35 +53,11 @@ for pattern1, pattern2 in permutations(['xyy', 'xxy', 'xyx'], 2):
 
         # make corpora + vocab
         train_corpus = MarcusCorpus(input_params, name='train', pattern=pattern1)
-        assert train_corpus.params.pattern == pattern1
-        #
         test_corpus1 = MarcusCorpus(input_params, name='test1', pattern=pattern1)
-        assert test_corpus1.params.pattern == pattern1
-        #
         test_corpus2 = MarcusCorpus(input_params, name='test2', pattern=pattern2)
-        assert test_corpus2.params.pattern == pattern2
-        #
         master_vocab = Vocab(train_corpus, test_corpus1, test_corpus2)  # create vocab once
-
         assert train_corpus.params.pattern == test_corpus1.params.pattern
-        assert train_corpus.params.pattern != test_corpus2.params.pattern  # setattr only links but does not copy
-
-        # TODO debug
-
-
-        print(test_corpus1)
-        print(test_corpus1.sequences)
-        print(input_params.pattern)
-        print(test_corpus1.params.pattern)
-        print(input_params.pattern)
-        print('----------------------------------')
-        print(test_corpus2)
-        print(test_corpus2.sequences)
-        print(input_params.pattern)
-        print(test_corpus2.params.pattern)
-        print(input_params.pattern)
-        print('=======================================================')
-        raise SystemExit
+        assert train_corpus.params.pattern != test_corpus2.params.pattern
 
         # progressbar
         if PROGRESS_BAR:
@@ -92,12 +65,6 @@ for pattern1, pattern2 in permutations(['xyy', 'xxy', 'xyx'], 2):
         pbar = pyprind.ProgBar(NUM_REPS * 2, stream=sys.stdout)
 
         for test_corpus in [test_corpus1, test_corpus2]:
-
-
-            # TODO debug
-            print(test_corpus)
-            print(test_corpus.params.pattern)
-            print(test_corpus.sequences)
 
             # determine what pp to evaluate
             pattern = test_corpus.params.pattern
@@ -138,8 +105,9 @@ for pattern1, pattern2 in permutations(['xyy', 'xxy', 'xyx'], 2):
         # plot perplexity
         # note: the two perplexity trajectories are not guaranteed to be computed on the same category and position
         time_stamp = datetime.datetime.now().strftime("%B %d %Y %I:%M:%s")
+        setattr(input_params, 'pattern', '<see figure>')
         plot_params(time_stamp, input_params, rnn_params)
         plot_pp_trajs(pattern2pps, 'post-training pattern', 'item_pps',
-                      x_step=1, title='Comparing post-training performance after'
-                                      '\n{}-epoch pre-training with pattern={}'
-                                      '\nn={}'.format(num_epochs, pattern1, NUM_REPS))
+                      x_step=1, y_max=4.0, title='Comparing post-training performance after'
+                                                 '\n{}-epoch pre-training with pattern={}'
+                                                 '\nn={}'.format(num_epochs, pattern1, NUM_REPS))
